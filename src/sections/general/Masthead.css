@@ -1,0 +1,130 @@
+#masthead-container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+#masthead-container #logo {
+  top: 3rem;
+  left: 3rem;
+}
+
+#masthead-content {
+  width: 80vh;
+  height: auto;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+#masthead-container img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 100vw;
+  z-index: 0;
+  object-fit: cover;
+}
+
+#masthead-container #intro {
+  width: 100%;
+  text-align: center;
+  z-index: 2;
+}
+
+#masthead-content .masthead-form-group {
+  flex: 5;
+  position: relative;
+}
+
+#masthead-content .masthead-form-control {
+  width: 100%;
+  display: block;
+  box-sizing: border-box;
+  border: none;
+  padding: 1rem;
+  margin: 0;
+  outline: none;
+  /*height: 22px;*/
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--type-5-font-size);
+  line-height: 0;
+  background: transparent;
+  color: #fff;
+  border-bottom: 2px solid #fff;
+}
+
+#masthead-content.scheme-dark .masthead-form-control {
+  border-bottom: 1px solid #000;
+  color: #000;
+}
+
+#masthead-container .masthead-form-control::placeholder {
+  color: #fff;
+}
+
+#masthead-content.scheme-dark .masthead-form-control::placeholder {
+  color: #000;
+}
+
+#masthead-content .masthead-autocomplete-container {
+  position: absolute;
+  top: 100%;
+  background: #fff;
+  width: 100%;
+}
+
+#masthead-content .masthead-autocomplete-item {
+  font-size: var(--type-4-font-size);
+  line-height: var(--type-4-line-height);
+  padding: 1rem;
+  color: #7f7f7f;
+}
+
+#masthead-content .masthead-autocomplete-item-active {
+  background-color: #e8e8e8;
+  color: #000;
+}
+
+#masthead-container svg.masthead-circle {
+  height: 95%;
+  position: absolute;
+  z-index: 1;
+}
+
+#masthead-container svg.masthead-circle circle {
+  fill: transparent;
+}
+
+#masthead-description {
+  margin: 20px 0;
+  background-color: rgba(255, 255, 255, 0.65);
+  padding: 15px;
+}
+
+#masthead-description h6 {
+  margin: 0;
+}
+
+#masthead-container button {
+  border: 0;
+  border-radius: 0;
+  cursor: pointer;
+  flex: 1;
+  min-height: 55px;
+}
+
+.masthead-form {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: row;
+  margin-top: 20px;
+}

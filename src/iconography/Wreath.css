@@ -1,0 +1,13 @@
+.seed-circle{
+    fill: transparent;
+    stroke: #7f7f7f;
+    stroke-width: 1px;
+    opacity: 0.2;
+    transition-timing-function: ease;
+}
+
+.selected-seed-circle {
+    opacity: 1;
+    transition-timing-function: ease;
+    transition: opacity 2s;
+}

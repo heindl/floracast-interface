@@ -1,0 +1,80 @@
+#beta-form-container {
+  width: 100%;
+}
+
+#beta-form-container h4 {
+  color: #000;
+  margin: 0.5em 0 0;
+}
+
+#beta-form-container .content-intro {
+  font-weight: 300;
+  padding: 0 25px 10px;
+  margin: 5px;
+}
+
+#beta-form-container .beta-form-terms,
+#beta-form-container .beta-form-terms a {
+  color: #909090;
+  margin: 2rem 0 4rem;
+  font-weight: 300;
+}
+
+#beta-form-container .hidden {
+  display: none !important;
+}
+
+#beta-form-container .beta-form-content {
+  margin: 0 auto;
+  border: 7px solid #000;
+  width: calc(100% - 14px);
+  max-width: 600px;
+  min-width: calc(320px - 14px);
+  /*padding: 20px;*/
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  min-height: 345px;
+  justify-content: center;
+}
+
+#beta-form-container .beta-form-content svg#loading-icon {
+  align-self: center;
+  justify-self: center;
+}
+
+button.beta-form-send {
+  border: 0;
+  background: #000;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+button.beta-form-send svg {
+  fill: #fff;
+}
+
+#beta-form-container .beta-form-input {
+  display: block;
+  margin: 0 auto;
+}
+
+#beta-form-container input {
+  height: 41px;
+  padding-left: 15px;
+  /*position: relative;*/
+  /*display: inline-block;*/
+  float: left;
+  cursor: text;
+  line-height: 1.5;
+  color: rgba(0, 0, 0, 0.65);
+  background-color: #fff;
+  background-image: none;
+  border: 1px solid #d9d9d9;
+  transition: all 0.3s;
+  width: 200px;
+}
+
+#beta-form-container button.beta-form-send {
+  float: left;
+}

@@ -1,0 +1,201 @@
+#navigation {
+  position: fixed;
+  top: 0;
+  width: 100vw;
+  background: #fff;
+  box-shadow: 0 4px 2px -2px rgba(0, 0, 0, 0.12);
+  z-index: 401;
+}
+
+#search-bar {
+  flex: 1;
+  height: var(--search-bar-height);
+  background: #fff;
+  display: flex;
+  flex-direction: row;
+  position: relative;
+}
+
+#search-bar-logo {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  width: auto;
+  padding: 0 25px;
+}
+
+#timeline {
+  flex: 1;
+  height: var(--search-bar-height);
+  border-top: 1px solid #dddddd;
+  position: relative;
+  z-index: 600;
+  overflow: visible;
+  display: flex;
+  align-items: center;
+}
+
+#timeline-svg {
+  overflow: visible;
+}
+
+#timeline-month {
+  height: 500px;
+}
+
+#timeline-week {
+  height: 1000px;
+}
+
+.search-field {
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  min-width: 14%;
+}
+
+.search-field, .search-field-element {
+  cursor: pointer;
+}
+
+.search-field-taxa-summary {
+  justify-content: flex-end !important;
+  align-content: flex-start !important;
+  align-items: flex-start !important;
+}
+
+.search-field-taxa-summary:hover {
+  cursor: auto;
+}
+
+.search-field-taxa-summary h4, .search-field-taxa-summary:hover h4, .search-field-taxa-summary h4:hover {
+  color: #333 !important;
+  opacity: 0.5;
+}
+
+.search-field-taxa-summary hr {
+  color: #333;
+  opacity: 0.7;
+  width: 100%;
+  border-width: 0.5px;
+  margin: 5px 0 0 0;
+}
+
+.search-field-elements {
+  height: 100%;
+  overflow: scroll;
+}
+
+.search-field h4 {
+  margin: -10px 0 -3px 0;
+}
+
+h6.search-field-function-word {
+  font-weight: 100;
+  flex: 0;
+  align-self: center;
+  margin: 0 -3px;
+}
+
+.search-field-element:hover h4 {
+  color: #4078c0;
+}
+
+.search-field span.hidden {
+  display: none;
+}
+
+.search-field.selected {
+  color: #4078c0;
+}
+
+.search-field-unfocused, .search-field-unfocused .search-field-element {
+  background: transparent;
+}
+
+#taxa-search-field {
+  min-width: 25%;
+  display: flex;
+  flex-direction: column;
+}
+
+.search-field-focused {
+  height: 100vh;
+}
+
+.search-field-focused .search-field-element {
+  border-color: #e0e0e0;
+}
+
+.search-field-element {
+  padding: 1rem;
+  height: calc(var(--search-bar-height) - 2rem);
+  background-color: #fff;
+  position: relative;
+  border-left: 1px solid transparent;
+  border-right: 1px solid transparent;
+}
+
+.search-field-element-content {
+  display: flex;
+  align-items: start;
+  align-content: center;
+  justify-content: center;
+  flex-direction: column;
+  height: 100%;
+  float: left;
+}
+
+.search-field-element img {
+  width: calc(var(--search-bar-height) - 2rem);
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  float: left;
+  margin-right: 1rem;
+}
+
+/*.search-field-focused .search-field-element:not(:first-of-type):hover {*/
+  /*background-color: lightsteelblue;*/
+/*}*/
+
+.search-field input {
+  outline:none;
+  height: 31px;
+  padding-left: 0;
+  float: left;
+  cursor: text;
+  line-height: 1.5;
+  color: rgba(0, 0, 0, 0.65);
+  background-color: #fff;
+  border: 0;
+  border-bottom:0px solid #d9d9d9;
+  transition: all .3s;
+  font-size: 1.618rem;
+  font-weight: 400;
+  color: #000;
+  margin-top: -6px;
+}
+
+.search-field ::placeholder {
+  color: #000;
+  opacity: 0.75;
+}
+
+.search-field-highlight {
+  position: absolute;
+  bottom: 10px;
+  opacity: 0.65;
+}
+
+.search-field-unfocused .search-field-highlight, .search-field-unfocused .search-field-highlight a {
+  color: #fff;
+}
+
+.search-field:hover .search-field-highlight {
+  color: #222222;
+}
+
+.search-field:hover .search-field-highlight a {
+  color: #4078c0;
+}

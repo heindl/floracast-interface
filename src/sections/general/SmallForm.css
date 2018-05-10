@@ -1,0 +1,68 @@
+.small-form-container {
+    max-width: 25rem;
+}
+
+.small-form-intro {
+    font-weight: 400;
+    text-align: center;
+    margin: 2rem 0;
+}
+
+/*#forecast-form-container .forecast-form-terms, #forecast-form-container .forecast-form-terms a {*/
+    /*color: #909090;*/
+    /*margin: 2em 0 4em;*/
+    /*font-weight: 300;*/
+/*}*/
+
+.small-form-input.hidden {
+    display: none !important;
+}
+
+svg#small-form-loading-icon{
+    align-self: center;
+    justify-self: center;
+}
+
+.small-form-form {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.small-form-input {
+    font-size: var(--type-4-font-size);
+    /*font-family: 'Open Sans', sans-serif;*/
+    padding: 1rem;
+    /*position: relative;*/
+    /*display: inline-block;*/
+    float: left;
+    cursor: text;
+    color: rgba(0, 0, 0, 0.65);
+    background-color: #fff;
+    background-image: none;
+    outline:none;
+    border: 1px solid #d9d9d9;
+    transition: all .3s;
+    flex: 1;
+    margin: 0 -0.1rem 0;
+}
+
+.small-form-button {
+    border: 0;
+    background: #000;
+    border-radius: 0;
+    cursor: pointer;
+    height: 4.4rem;
+    width: 4.4rem;
+    margin: 0;
+    padding: 0;
+    float: left;
+    outline:none;
+}
+
+.small-form-button:hover {
+    background: transparent;
+    border: 1px solid #d9d9d9;
+}
+

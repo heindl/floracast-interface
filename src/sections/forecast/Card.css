@@ -1,0 +1,89 @@
+/* Card */
+
+/*100% with phi(1.618)*/
+/*61.803398875*/
+/*38.196601125*/
+/*23.60679775*/
+/*14.589803375*/
+/*9.0169943749*/
+/*5.5728090001*/
+
+#forecast-page-list {
+  height: 100%;
+  width: 100%;
+}
+
+/*#forecast-page-list:last-child {*/
+  /*margin-bottom: calc(100vw * 0.013155617496 * 2);*/
+/*}*/
+
+.forecast-card {
+  background-color: transparent;
+  height: calc(10em * 1.618);
+  z-index: 2;
+  margin-bottom: 3rem;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 3.236rem;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.forecast-card a {
+  color: #222;
+}
+
+.forecast-card a:hover {
+  color: steelblue;
+}
+
+.forecast-card-protected-area{
+  flex: 1;
+  position: relative;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  margin: 0 0.618rem;
+}
+
+.forecast-card-taxon-scientific-name {
+  font-style: italic;
+  line-height: var(--type-3-line-height);
+  margin: 1rem 0 0;
+  opacity: 0.3;
+}
+
+.forecast-card-protected-area-name {
+  font-weight: 900;
+  line-height: var(--type-3-line-height);
+  z-index: 2;
+}
+
+.forecast-card-protected-area-designation {
+  line-height: var(--type-5-line-height);
+  z-index: 2;
+}
+
+.forecast-card-protected-area-distance {
+  z-index: 2;
+}
+
+.forecast-card-taxon{
+  flex: 1;
+  align-self: flex-end;
+  margin: 0 0.618rem;
+}
+
+.forecast-card-image {
+  flex: 1;
+  height: 100%;
+  width: 33%;
+  object-fit: cover;
+  object-position: center;
+  border: 1px solid #e0e0e0;
+  /*margin: 0 0.618rem;*/
+  padding: 0.618rem;
+}

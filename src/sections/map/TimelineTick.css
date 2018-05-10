@@ -1,0 +1,100 @@
+/*#timeline .hidden {*/
+/*display: none;*/
+/*}*/
+
+/*#timeline .month-label {*/
+/*font-family: 'Open Sans', sans-serif !important;*/
+/*font-size: 12px;*/
+/*font-weight: 100;*/
+/*}*/
+
+#timeline .tick:hover {
+    cursor: pointer;
+}
+
+#timeline .tick {
+    margin: 0;
+    padding: 5px 0 0 0;
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+    align-items: center;
+}
+
+/*#timeline .tick-inner {*/
+/*margin: 0;*/
+/*padding: 0;*/
+/*position: relative;*/
+/*}*/
+
+#timeline .tick svg {
+    margin: -4px 0 -1px;
+    flex: 1;
+    height: 30px;
+    width: 30px;
+    overflow: visible;
+}
+
+#timeline .popper-inner {
+    background-color: #fff;
+}
+
+#timeline .tick-keyframe-one {
+    z-index: 601;
+    background-color: transparent;
+    /*transform: translate(-50%,-50%);*/
+    transform-origin: 50% 50%;
+    animation: tick-one 2s infinite;
+}
+
+#timeline .tick-keyframe-two {
+    z-index: 602;
+    transform-origin: 50% 50%;
+    animation: tick-two 2s infinite;
+}
+
+#timeline .tick-keyframe-three {
+    z-index: 603;
+    transform-origin: 50% 50%;
+    animation: tick-three 1s alternate infinite;
+}
+
+
+@keyframes tick-one {
+    0%   {
+        /*opacity: 1;*/
+    }
+    100% {
+        opacity: 0;
+        transform: scale(5);
+    }
+}
+
+@keyframes tick-two {
+    0%   {
+        /*opacity: 1;*/
+    }
+    100% {
+        opacity: 0;
+        transform: scale(2);
+    }
+}
+
+@keyframes tick-three {
+    0%   {
+        /*transform: scale(1);*/
+    }
+    100% {
+        transform: scale(1.1);
+    }
+}
+
+/*#timeline .tick:hover circle {*/
+/*opacity: 0.8;*/
+/*}*/
+
+/*#timeline .tick.selected circle {*/
+/*opacity: 0.75;*/
+/*fill: "#0090ff";*/
+/*}*/

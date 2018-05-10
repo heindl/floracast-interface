@@ -1,0 +1,9 @@
+.confidence-scale-chart {
+    position: absolute;
+    left: 5%;
+    top: 5%;
+    width: 90%;
+    height: 90%;
+    opacity: 0.2;
+
+}

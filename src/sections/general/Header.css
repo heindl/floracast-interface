@@ -1,0 +1,18 @@
+#logo {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
+}
+
+#logo .title {
+    margin-left: 1rem;
+    display: inline-block;
+}
+
+#logo a {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+}
