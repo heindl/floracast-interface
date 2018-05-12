@@ -31,11 +31,9 @@ class PredictionFeatureGroup extends React.Component<IPredictionFeatureGroupProp
         return (
             <ReactLeaflet.FeatureGroup>
                 {predictionPointStore.MapPoints.map((point) => {
-                    const key = point.properties && (point.properties.cluster_id || point.properties.id);
                     return (
                         <PointMarker
-                            key={key}
-                            id={key}
+                            key={point.id}
                             point={point}
                             namespace={this.props.namespace}
                         />
@@ -64,8 +62,8 @@ class OccurrenceFeatureGroup extends React.Component<IOccurrenceFeatureGroupProp
                 {occurrencePointStore.MapPoints.map((point) => {
                     return (
                         <ReactLeaflet.CircleMarker
-                            key={point.properties && point.properties.id}
-                            center={[point.geometry.coordinates[1], point.geometry.coordinates[0]]}
+                            key={point.id}
+                            center={[point.latitude, point.longitude]}
                             radius={10}
                             fill={true}
                             fillColor={'rgba(213, 55, 106,1)'}
@@ -80,9 +78,7 @@ class OccurrenceFeatureGroup extends React.Component<IOccurrenceFeatureGroupProp
 
 interface IPointMapProps {
   coordinateStore?: CoordinateStore;
-  occurrencePointStore?: PointStore;
-    predictionPointStore?: PointStore;
-    viewStore?: ViewStore;
+  viewStore?: ViewStore;
   namespace: string;
 }
 
@@ -90,27 +86,12 @@ interface IPointMapState {
   mapReady: boolean;
 }
 
-@inject('coordinateStore', 'occurrencePointStore', 'predictionPointStore', 'viewStore')
+@inject('coordinateStore', 'viewStore')
 @observer
 export default class PointMap extends React.Component<
   IPointMapProps,
   IPointMapState
 > {
-  // public handleMoveEnd = (e) => {
-  //   if (this.props.coordinateStore) {
-  //     this.props.coordinateStore.SetPosition(
-  //       e.target.getCenter().lat,
-  //       e.target.getCenter().lng,
-  //         e.target.getZoom(),
-  //     );
-  //   }
-  // }
-  //
-  // public handleZoomEnd = (e) => {
-  //   if (this.props.coordinateStore) {
-  //     this.props.coordinateStore.SetZoom(e.target.getZoom());
-  //   }
-  // }
 
   constructor(props: IPointMapProps) {
     super(props);
@@ -120,11 +101,13 @@ export default class PointMap extends React.Component<
   }
 
   public render() {
-    const { coordinateStore, predictionPointStore, occurrencePointStore, viewStore } = this.props;
+    const { coordinateStore, viewStore } = this.props;
 
-    if (!coordinateStore || !predictionPointStore || !occurrencePointStore || !viewStore) {
+    if (!coordinateStore || !viewStore) {
       return null;
     }
+
+    console.log("Creating Map", coordinateStore.Latitude, coordinateStore.Longitude, coordinateStore.Zoom)
     return (
       <ReactLeaflet.Map
         whenReady={this.handleMapReady}
@@ -144,18 +127,18 @@ export default class PointMap extends React.Component<
           <Icon
               color="#696969"
               icon={Navigate}
-              onClick={coordinateStore.Geolocate}
+              onClick={this.geolocate}
           />
           <Icon
               color="#696969"
               icon={Plus}
-              onClick={coordinateStore.IncrementZoom}
+              onClick={this.zoomIn}
           />
           <Icon
             icon={Minus}
             color={coordinateStore.Zoom <= 6 ? "#eee" : "#696969"}
             activeColor={coordinateStore.Zoom <= 6 ? "#eee" : "#000"}
-            onClick={coordinateStore.DecrementZoom}
+            onClick={this.zoomOut}
           />
         </div>
         <ReactLeaflet.TileLayer
@@ -174,6 +157,24 @@ export default class PointMap extends React.Component<
       </ReactLeaflet.Map>
     );
   }
+
+    protected geolocate = () => {
+        if (this.props.coordinateStore) {
+            this.props.coordinateStore.Geolocate()
+        }
+    }
+
+  protected zoomIn = () => {
+      if (this.props.coordinateStore) {
+          this.props.coordinateStore.IncrementZoom(1)
+      }
+  }
+
+    protected zoomOut = () => {
+        if (this.props.coordinateStore) {
+            this.props.coordinateStore.IncrementZoom(-1)
+        }
+    }
 
   protected handleMapReady = () => {
       this.setState({ mapReady: true })

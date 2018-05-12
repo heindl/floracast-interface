@@ -95,7 +95,8 @@ interface IRandomGeoClustersProps{
 interface IRandomGeoClustersState{
     circles: ICircle[],
     in?: boolean;
-    mapLink?: string;
+    height?: number;
+    width?: number;
 }
 
 function getRandomInt(min: number, max: number): number {
@@ -114,7 +115,6 @@ export default class RandomGeoClusters extends React.Component<IRandomGeoCluster
         this.generateCircles = this.generateCircles.bind(this);
         this.state = {
             circles: [],
-            mapLink: '',
         }
     }
 
@@ -127,14 +127,7 @@ export default class RandomGeoClusters extends React.Component<IRandomGeoCluster
 
         this.generateCircles();
         this.intervalId = window.setInterval(this.generateCircles, this.props.totalCycleTime);
-
-        this.setState({
-            mapLink: coordinateStore.StaticMapFunc.f(
-                this.staticMapDiv.clientHeight,
-                this.staticMapDiv.clientWidth,
-                7
-            )
-        });
+        this.setState({height: this.staticMapDiv.clientHeight, width: this.staticMapDiv.clientWidth})
     }
 
     public componentWillUnmount() {
@@ -144,25 +137,38 @@ export default class RandomGeoClusters extends React.Component<IRandomGeoCluster
 
     public render() {
 
+        const {coordinateStore} = this.props;
+        if (!coordinateStore) {
+            return
+        }
+
+        const mapLink = coordinateStore.StaticMapFunc.f(
+            this.state.width || 0,
+            this.state.height || 0,
+            7
+        );
+
         return (
             <div
                 id="random-geo-clusters"
                 ref={(r) => {if (r) {this.staticMapDiv = r}}}
                 // style={{backgroundImage: `url("${this.state.mapLink}")`}}
             >
-                <img
-                    style={{
-                        height: "100%",
-                        opacity: 0.3,
-                        position: "absolute",
-                        right: 0,
-                        top: 0,
-                        width: "100%",
-                        zIndex:1,
+                {typeof mapLink === "string" &&
+                    <img
+                        style={{
+                            height: "100%",
+                            opacity: 0.3,
+                            position: "absolute",
+                            right: 0,
+                            top: 0,
+                            width: "100%",
+                            zIndex:1,
 
-                    }}
-                    src={this.state.mapLink}
-                />
+                        }}
+                        src={mapLink}
+                    />
+                }
                 <svg
                     version="1.1"
                     xmlns="http://www.w3.org/2000/svg"
@@ -201,7 +207,7 @@ export default class RandomGeoClusters extends React.Component<IRandomGeoCluster
             "#E9C46A",
             "#F4A261",
             "#E76F51"
-        ]
+        ];
 
         const midX = getRandomInt(0, this.props.viewBox[0]);
         const midY = getRandomInt(0, this.props.viewBox[1]);
@@ -210,11 +216,11 @@ export default class RandomGeoClusters extends React.Component<IRandomGeoCluster
 
         const xRange = [
             midX - w , midX + w
-        ]
+        ];
 
         const yRange = [
             midY - w, midY + w
-        ]
+        ];
 
         const colorPosition = getRandomInt(0, colors.length);
 

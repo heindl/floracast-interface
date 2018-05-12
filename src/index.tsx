@@ -9,9 +9,9 @@ import { BrowserRouter, Route, Switch } from 'react-router-dom';
 import './index.css';
 import registerServiceWorker from './registerServiceWorker';
 
-// import {enableLogging} from 'mobx-logger';
-//
-// enableLogging();
+import {enableLogging} from 'mobx-logger';
+
+enableLogging();
 
 const trackingId = process.env.REACT_APP_GA_TRACKING_ID;
 if (trackingId) {

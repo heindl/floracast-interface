@@ -1,12 +1,12 @@
 /* tslint:disable:max-classes-per-file no-submodule-imports */
 import * as classNames from 'classnames';
-import * as GeoJSON from "geojson";
 import { divIcon } from 'leaflet';
 import { inject, observer } from 'mobx-react';
 import * as React from 'react';
 import {renderToString} from 'react-dom/server';
 import * as ReactLeaflet from 'react-leaflet';
 import {CoordinateStore} from "../../stores/coordinates";
+import {IMapPoint} from "../../stores/points";
 import {GetColor} from "../../stores/timeline";
 import { ViewStore } from '../../stores/view';
 import './PointMarker.css';
@@ -86,11 +86,10 @@ class PredictionDivIcon extends React.Component<IPredictionDivIconProps> {
 }
 
 interface IPointMarkerProps {
-  point: GeoJSON.Feature<GeoJSON.Point>;
+  point: IMapPoint;
   namespace: string;
   viewStore?: ViewStore;
     coordinateStore?: CoordinateStore;
-    id: string;
 }
 
 @inject('viewStore', 'coordinateStore')
@@ -110,13 +109,10 @@ export default class PointMarker extends React.Component<
       return null;
     }
 
-    const {properties, geometry} = this.props.point;
-    if (!properties) {
-      return
-    }
-
-    const clusterCount = (properties.point_count || 1);
-    const prediction = (properties.predictionCount || 0) / clusterCount;
+    // const clusterCount = (properties.point_count || 1);
+      const clusterCount = 1;
+    // const prediction = (properties.predictionCount || 0) / clusterCount;
+      const prediction = this.props.point.prediction || 0;
 
     // const radius =  (prediction * (Math.sqrt(clusterCount) * (this.props.zoom * 1.5)));
     const radius = (prediction * prediction  * Math.sqrt(clusterCount)) * (coordinateStore.Zoom * 4);
@@ -131,22 +127,22 @@ export default class PointMarker extends React.Component<
                   prediction={prediction}
                   radius={radius}
                   clusterCount={clusterCount}
-                  hovered={viewStore.HoveredMapDivIcon === this.props.id}
+                  hovered={viewStore.HoveredMapDivIcon === this.props.point.id}
               />
           ),
         })}
         onMouseOver={this.toggleHover}
         onMouseOut={this.toggleHover}
-        position={{lat: geometry.coordinates[1], lng: geometry.coordinates[0]}}
+        position={{lat: this.props.point.latitude, lng: this.props.point.longitude}}
         onClick={this.handleClick}
       >
           {clusterCount === 1 &&
             <ProtectedAreaTooltip
-                latitude={geometry.coordinates[1]}
-                longitude={geometry.coordinates[0]}
+                latitude={this.props.point.latitude}
+                longitude={this.props.point.longitude}
                 prediction={prediction}
                 namespace={this.props.namespace}
-                token={properties.id}
+                token={this.props.point.id}
             />
           }
       </ReactLeaflet.Marker>
@@ -155,12 +151,7 @@ export default class PointMarker extends React.Component<
 
   protected handleClick = (e: Event) => {
 
-     const featureProps = this.props.point.properties;
-     if (!featureProps) {
-         return
-     }
-
-      const token = featureProps.id;
+      const token = this.props.point.id;
 
       if (token) {
           if (this.props.viewStore) {
@@ -169,8 +160,8 @@ export default class PointMarker extends React.Component<
       } else {
           if (this.props.coordinateStore) {
               this.props.coordinateStore.SetPosition(
-                  this.props.point.geometry.coordinates[1],
-                  this.props.point.geometry.coordinates[0],
+                  this.props.point.latitude,
+                  this.props.point.longitude,
                   this.props.coordinateStore.Zoom + 1
               );
           }
@@ -179,8 +170,8 @@ export default class PointMarker extends React.Component<
 
   protected toggleHover = () => {
         if (this.props.viewStore) {
-            const isHovered = this.props.viewStore.HoveredMapDivIcon === this.props.id;
-            this.props.viewStore.SetHoveredMapDivIcon(isHovered ? this.props.id : '')
+            const isHovered = this.props.viewStore.HoveredMapDivIcon === this.props.point.id;
+            this.props.viewStore.SetHoveredMapDivIcon(isHovered ? this.props.point.id : '')
         }
     };
 }

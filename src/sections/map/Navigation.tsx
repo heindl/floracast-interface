@@ -1,3 +1,4 @@
+/* tslint:disable:max-classes-per-file */
 import { inject, observer } from 'mobx-react';
 import * as React from 'react';
 import { Link } from 'react-router-dom';
@@ -12,13 +13,37 @@ import PointTypeSearchField from './search-fields/PointTypeSearchField';
 import TaxaSearchField from './search-fields/TaxaSearchField';
 import Tick from './TimelineTick';
 
+interface ITickMarkProps{
+    pointType: PointType;
+    timelineStore?: TimelineStore;
+}
+
+@inject('timelineStore')
+@observer
+class TickMarks extends React.Component<ITickMarkProps> {
+    public render() {
+
+        const {timelineStore} = this.props;
+
+        if (!timelineStore) {
+            return null
+        }
+        return (
+            <div id="timeline">
+                {timelineStore.TickMarks.map((mark, i) => {
+                    return <Tick key={mark.moment.unix()} mark={mark} />;
+                })}
+            </div>
+        )
+    }
+}
+
 interface INavigationProps {
-  timelineStore?: TimelineStore;
   viewStore?: ViewStore;
   taxaStore?: TaxaStore;
 }
 
-@inject('viewStore', 'timelineStore', 'taxaStore')
+@inject('viewStore', 'taxaStore')
 @observer
 export default class Navigation extends React.Component<INavigationProps> {
   public PointTypeSearchRef: HTMLDivElement;
@@ -38,12 +63,10 @@ export default class Navigation extends React.Component<INavigationProps> {
     document.removeEventListener('mousedown', this.examineClickEvent);
   }
 
-
-
   public render() {
-    const { timelineStore, viewStore, taxaStore } = this.props;
+    const { viewStore, taxaStore } = this.props;
 
-    if (!timelineStore || !viewStore || !taxaStore) {
+    if (!viewStore || !taxaStore) {
       return null;
     }
 
@@ -80,35 +103,24 @@ export default class Navigation extends React.Component<INavigationProps> {
 
         </div>
 
-        {viewStore.TimelineIsVisible && viewStore.PointType === PointType.Occurrences && (
-          <div id="timeline">
-            {timelineStore.OccurrenceTickMarks.map((mark, i) => {
-              return <Tick key={mark.moment.unix()} mark={mark} />;
-            })}
-          </div>
-        )}
-
-          {viewStore.TimelineIsVisible && viewStore.PointType === PointType.Predictions && (
-              <div id="timeline">
-                  {timelineStore.PredictionTickMarks.map((mark, i) => {
-                      return <Tick key={mark.moment.unix()} mark={mark} />;
-                  })}
-              </div>
-          )}
+        {viewStore.TimelineIsVisible &&
+          <TickMarks pointType={viewStore.PointType} />
+        }
       </div>
     );
   }
 
   protected setPointRef = (r: HTMLDivElement) => {
       this.PointTypeSearchRef = r
-  }
+  };
+
     protected setDateRef = (r: HTMLDivElement) => {
         this.DateSearchRef = r
-    }
+    };
 
     protected setTaxaSearchRef = (r: HTMLDivElement) => {
         this.TaxaSearchRef = r
-    }
+    };
 
     protected examineClickEvent = (e: Event) => {
         const { viewStore } = this.props;

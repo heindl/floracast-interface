@@ -3,6 +3,7 @@ import * as React from 'react';
 import { Link } from 'react-router-dom';
 import ConfidenceScale from "../../iconography/ConfidenceScale";
 import { CoordinateStore } from '../../stores/coordinates';
+import {DateStore} from "../../stores/date";
 import { ErrorStore } from '../../stores/errors';
 import { RouterStore } from '../../stores/router';
 import { TaxaStore } from '../../stores/taxa';
@@ -16,9 +17,10 @@ interface ICardProps {
   viewStore?: ViewStore;
   coordinateStore?: CoordinateStore;
   taxaStore?: TaxaStore;
+  dateStore?: DateStore;
 }
 
-@inject('viewStore', 'taxaStore', 'coordinateStore')
+@inject('viewStore', 'taxaStore', 'coordinateStore', 'dateStore')
 @observer
 export default class Card extends React.Component<ICardProps> {
 
@@ -35,8 +37,8 @@ export default class Card extends React.Component<ICardProps> {
   // }
 
   public render() {
-    const { taxon, viewStore, coordinateStore } = this.props;
-    if (!viewStore || !coordinateStore) {
+    const { taxon, viewStore, coordinateStore, dateStore } = this.props;
+    if (!viewStore || !coordinateStore || !dateStore) {
       return;
     }
 
@@ -44,6 +46,8 @@ export default class Card extends React.Component<ICardProps> {
 
     const mapPath = RouterStore.FormMapPath({
       coordStr: coordinateStore.Formatted,
+        date: dateStore.DateString,
+        nameUsageId: taxon.NameUsageID,
       pointType: viewStore.PointType,
     });
 

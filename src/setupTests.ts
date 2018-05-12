@@ -6,8 +6,12 @@
 //     window.innerHeight = height;
 //     window.dispatchEvent(resizeEvent);
 // };
+import { configure } from 'mobx';
+import { IGeoLocationMock } from './utils/IGeoLocationMock';
 
-import { IGeoLocationMock } from './utils/geolocation.mock';
+configure({
+    enforceActions: true,
+});
 
 // global.window.innerWidth = 600;
 // global.window.innerHeight = 400;

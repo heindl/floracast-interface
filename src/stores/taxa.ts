@@ -1,15 +1,16 @@
-import {FirebaseFirestore} from "@firebase/firestore-types";
-import {action, autorun, IReactionDisposer, IReactionOptions, observable} from 'mobx';
+import * as _ from 'lodash';
+import {action, IReactionDisposer, observable, reaction} from 'mobx';
+import {S2CellId} from "nodes2ts";
 import {
     FetchOccurrenceTaxa,
     FetchPredictionTaxa, IPredictionResponse,
 } from '../geoindex/taxa';
-import {CoordinateStore, getCoordinateStore} from './coordinates';
-import {DateStore, getDateStore} from './date';
-import {ErrorStore, getErrorStore} from './errors';
+import {getCoordinateStore} from './coordinates';
+import {getDateStore} from './date';
+import {getErrorStore} from './errors';
 import {getFireStoreRef} from './firestore';
 import Taxon from './taxon';
-import {getViewStore, InFocusField, PointType, ViewStore} from './view';
+import {getViewStore, InFocusField, PointType} from './view';
 
 export class TaxaStore {
 
@@ -20,26 +21,32 @@ export class TaxaStore {
     @observable public IsLoading: boolean = true;
 
   protected readonly namespace: string;
-    protected coordinateStore: CoordinateStore;
-    protected viewStore: ViewStore;
-    protected dateStore: DateStore;
-    protected fireStoreRef: FirebaseFirestore;
-    protected errorStore: ErrorStore;
 
     protected unsubscribe: IReactionDisposer;
 
     constructor(namespace: string) {
         this.namespace = namespace;
-        this.coordinateStore = getCoordinateStore(namespace);
-        this.viewStore = getViewStore(namespace);
-        this.fireStoreRef = getFireStoreRef(namespace);
-        this.dateStore = getDateStore(namespace);
-        this.errorStore = getErrorStore(namespace);
+        const coordinateStore = getCoordinateStore(namespace);
+        const viewStore = getViewStore(namespace);
+        const dateStore = getDateStore(namespace);
 
-        const autoRunOptions: IReactionOptions = {fireImmediately: false, name: "Taxa Fetch"};
-        this.subscribe = this.subscribe.bind(this);
-        this.unsubscribe = autorun(this.subscribe,
-            autoRunOptions
+        this.unsubscribe = reaction(
+            () => {
+                return {
+                    covering: coordinateStore.Covering,
+                    date: dateStore.DateString,
+                    inFocusField: viewStore.InFocusField,
+                    lat: coordinateStore.Latitude,
+                    lng: coordinateStore.Longitude,
+                    pointType: viewStore.PointType,
+                    section: viewStore.Section,
+                }
+            },
+            (i) => this.fetchTaxa(i),
+            {
+                fireImmediately: false,
+                name: "Taxa Fetch",
+            }
         );
     }
 
@@ -53,13 +60,10 @@ export class TaxaStore {
             typeof txn === 'string' ? new Taxon(txn, this.namespace) : txn;
     }
 
-
   @action
   protected SetLoading(b: boolean) {
     this.IsLoading = b;
   }
-
-
 
   @action
   protected setPredictionTaxa(res: IPredictionResponse[]) {
@@ -111,21 +115,40 @@ export class TaxaStore {
     this.SetLoading(false);
   }
 
-  protected subscribe(){
+  protected fetchTaxa(i: {
+      lat: number;
+      lng: number;
+      pointType: PointType;
+      date: string;
+      covering: S2CellId[];
+      inFocusField?: InFocusField;
+      section?: string;
+                      }){
 
-      if (!this.coordinateStore.Latitude || !this.coordinateStore.Longitude) {
+        console.log("Fetching taxa", i)
+
+      const go = !_.isEmpty(i.lat)
+          && !_.isEmpty(i.lng)
+          && !_.isEmpty(i.pointType)
+          && !_.isEmpty(i.date)
+          && !_.isEmpty(i.covering);
+
+      if (!go) {
+          if (i.pointType) {
+              if (i.pointType === PointType.Predictions) {
+                  this.setPredictionTaxa([])
+              } else {
+                  this.setOccurrenceTaxa([])
+              }
+          }
           return
       }
 
-      const centre: [number, number] = [
-          this.coordinateStore.Latitude,
-        this.coordinateStore.Longitude,
-      ];
-      const pointType = this.viewStore.PointType;
-      const date = this.dateStore.DateString;
-      const covering = this.coordinateStore.Covering;
 
-      const listIsVisible = (this.viewStore.InFocusField === InFocusField.FieldTaxon || this.viewStore.Section === 'forecast')
+
+      const listIsVisible = (i.inFocusField === InFocusField.FieldTaxon || i.section === 'forecast');
+
+      console.log("listisvisible", listIsVisible)
 
       if (!listIsVisible && this.Selected) {
         return
@@ -133,24 +156,24 @@ export class TaxaStore {
 
       this.SetLoading(true);
 
-      if (pointType === PointType.Predictions) {
-        FetchPredictionTaxa(this.fireStoreRef, covering, centre, date)
+      if (i.pointType === PointType.Predictions) {
+        FetchPredictionTaxa(getFireStoreRef(this.namespace), i.covering, [i.lat, i.lng], i.date)
           .then((res: IPredictionResponse[]) => {
             this.setPredictionTaxa(res);
           })
           .catch((err) => {
-            this.errorStore.Report(err);
+            getErrorStore(this.namespace).Report(err);
             this.SetLoading(false);
           });
       }
 
-      if (pointType === PointType.Occurrences) {
-        FetchOccurrenceTaxa(this.fireStoreRef, covering, date)
+      if (i.pointType === PointType.Occurrences) {
+        FetchOccurrenceTaxa(getFireStoreRef(this.namespace), i.covering, i.date)
           .then((res: Array<[string, number]>) => {
             this.setOccurrenceTaxa(res);
           })
           .catch((err) => {
-            this.errorStore.Report(err);
+              getErrorStore(this.namespace).Report(err);
             this.SetLoading(false);
           });
       }

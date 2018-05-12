@@ -1,16 +1,14 @@
-import {FirebaseFirestore} from "@firebase/firestore-types";
 import * as d3Scale from 'd3-scale';
 import { interpolateSpectral } from 'd3-scale-chromatic';
 import * as _ from 'lodash';
-import {computed} from 'mobx';
+import {action, IReactionDisposer, observable, reaction} from 'mobx';
 import * as moment from 'moment';
-import { CoordinateStore, getCoordinateStore } from './coordinates';
-import { DateStore, getDateStore } from './date';
-import {ErrorStore, getErrorStore} from './errors';
-import {getFireStoreRef} from './firestore';
-import {getPointStore, PointStore} from "./points";
-import {getTaxaStore, TaxaStore} from './taxa';
-import {getViewStore, PointType, ViewStore} from './view';
+import { getCoordinateStore } from './coordinates';
+import { getDateStore } from './date';
+import {getErrorStore} from './errors';
+import {getFirebaseStorageRef} from './firestore';
+import {getTaxaStore} from './taxa';
+import {getViewStore, PointType} from './view';
 
 export interface ITickMark {
   moment: moment.Moment;
@@ -35,104 +33,145 @@ interface ITimelineObject {
     Ω?: number;
 }
 
+type IJSONRequestPoint = [number, number, number]
+
+interface IJSONRequestObject{
+    [key: string]: Array<[number, number, number]>
+}
+
+interface IReactionData{
+    pointType: PointType,
+    viewPort?: [number, number],
+    levelSevenTokens?: string[],
+    nameUsageId?: string
+}
+
 export class TimelineStore {
+
+    @observable
+    public TickMarks = observable.array<ITickMark>([], {deep: false});
+
   protected readonly namespace: string;
 
-  protected occurrencePointStore: PointStore;
-    protected predictionPointStore: PointStore;
-
-  protected viewStore: ViewStore;
-  protected taxaStore: TaxaStore;
-  protected fireStoreRef: FirebaseFirestore;
-  protected errorStore: ErrorStore;
-  protected dateStore: DateStore;
-  protected coordStore: CoordinateStore;
+  protected geoSpatialIndex?: IJSONRequestObject;
 
 
-  // protected unsubscribe: IReactionDisposer;
+  protected UnsubscribeFetchJSONReaction?: IReactionDisposer;
+    protected UnsubscribeSetMarksReaction?: IReactionDisposer;
 
   constructor(namespace: string) {
 
       this.namespace = namespace;
 
-      this.occurrencePointStore = getPointStore(namespace, PointType.Occurrences);
-      this.predictionPointStore = getPointStore(namespace, PointType.Predictions);
+        const viewStore = getViewStore(namespace);
+        const taxaStore = getTaxaStore(namespace);
+        const coordStore = getCoordinateStore(namespace);
 
-    this.viewStore = getViewStore(namespace);
-    this.taxaStore = getTaxaStore(namespace);
-    this.fireStoreRef = getFireStoreRef(namespace);
-    this.errorStore = getErrorStore(namespace);
-    this.dateStore = getDateStore(namespace);
-    this.coordStore = getCoordinateStore(namespace);
+      this.UnsubscribeFetchJSONReaction = reaction(
+          () => ({
+              nameUsageId: taxaStore.Selected && taxaStore.Selected.NameUsageID,
+              pointType: viewStore.PointType,
+          }),
+          (o) => {this.fetchJSON({
+              levelSevenTokens: coordStore.CoveringAtLevelSeven,
+              nameUsageId: o.nameUsageId || undefined,
+              pointType: o.pointType,
+              viewPort: coordStore.ViewPort,
+          }, )},
+          {
+              fireImmediately: false,
+              name: `${viewStore.PointType} JSON Fetch`
+          }
+      );
 
-    // const autoRunOptions: IReactionOptions = {fireImmediately: false, name: "Timeline Fetch"};
-    // this.subscribe = this.subscribe.bind(this);
-    // this.unsubscribe = autorun(this.subscribe,
-    //     autoRunOptions
-    // );
-  }
-
-
-    @computed
-    public get OccurrenceTickMarks() {
-
-        const bounds = this.coordStore.Bounds;
-        const zoom = this.coordStore.Zoom;
-        const superClusters = this.occurrencePointStore.Clusters;
-        const viewPort: [number, number] = this.coordStore.ViewPort;
-
-        const res: Map<string, ITimelineObject> = new Map();
-        _.each(superClusters, (c, date) => {
-            let t = 0;
-            c.getClusters(bounds, zoom).forEach((g) => {
-                if (!g.properties || !g.properties.point_count) {
-                    throw Error(`Invalid Properties`)
-                }
-                t = t + g.properties.point_count;
-            });
-            res.set(date, {t})
-        });
-
-        const dateRange: [moment.Moment, moment.Moment] = [moment("20170101"), moment("20171231")];
-
-        return this.getMarks(
-            PointType.Occurrences,
-            generateMomentTicks(PointType.Occurrences, dateRange),
-            generateTimeScale(dateRange, viewPort),
-            res
-        );
-    }
-
-  @computed
-  public get PredictionTickMarks() {
-
-      const bounds = this.coordStore.Bounds;
-      const zoom = this.coordStore.Zoom;
-      const superClusters = this.predictionPointStore.Clusters;
-      const viewPort: [number, number] = this.coordStore.ViewPort;
-      const dateRange =  this.dateStore.PredictionDateRange;
-
-      const res: Map<string, ITimelineObject> = new Map();
-      _.each(superClusters, (c, date) => {
-          let t = 0;
-          let Ω = 0;
-          c.getClusters(bounds, zoom).forEach((g) => {
-              t = t + ((g.properties && g.properties.point_count) || 1);
-              Ω = Ω + ((g.properties && g.properties.predictionCount) || 0);
-          });
-          res.set(date, {t, Ω: (Ω/t)})
-      });
-
-      return this.getMarks(
-          PointType.Predictions,
-          generateMomentTicks(PointType.Predictions, dateRange),
-          generateTimeScale(
-              [moment("20170101"), moment("20171231")],
-              viewPort
-          ),
-          res
+      this.UnsubscribeSetMarksReaction = reaction(
+          () => coordStore.CoveringAtLevelSeven,
+          (tokens) => {this.setMarks({
+              levelSevenTokens: tokens,
+              pointType: viewStore.PointType,
+              viewPort: coordStore.ViewPort,
+          })},
+          {
+              fireImmediately: false,
+              name: `${viewStore.PointType} JSON Fetch`
+          }
       );
   }
+
+
+  @action
+  protected setMarks(i: IReactionData){
+
+        if (!this.geoSpatialIndex || !i.levelSevenTokens) {
+            this.TickMarks.clear();
+            return
+        }
+
+        const timelineObjects = _.mapValues<
+            {[key: string]: IJSONRequestPoint[]},
+            ITimelineObject
+            >(
+                _.groupBy(
+                    _.flatten(_.values(_.pick(this.geoSpatialIndex, i.levelSevenTokens))),
+                    (v: IJSONRequestPoint) => v[0]
+                ),
+                (v) => {
+                    const o: ITimelineObject = {
+                        t: _.sumBy(v, (a) => a[1])
+                    };
+                    const p = _.sumBy(v, (a) => a[1]);
+                    o.Ω = p > 0 ? p / o.t : undefined;
+                    return o
+                }
+        );
+
+        const occurrenceDateRange: [moment.Moment, moment.Moment] = [moment("20170101"), moment("20171231")];
+
+        this.TickMarks.replace(
+            this.getMarks(
+                i.pointType,
+                generateMomentTicks(
+                    i.pointType,
+                    i.pointType === PointType.Predictions ?
+                        getDateStore(this.namespace).PredictionDateRange :
+                        occurrenceDateRange
+                ),
+                generateTimeScale(
+                    occurrenceDateRange,
+                    i.viewPort || [0,0]
+                ),
+                timelineObjects
+            )
+        )
+  }
+
+    protected fetchJSON(i: IReactionData) {
+
+        if (i.pointType === PointType.Occurrences) {
+            return
+        }
+
+        if (!i.nameUsageId || i.nameUsageId === '') {
+            this.geoSpatialIndex = undefined;
+            this.setMarks(i);
+            return
+        }
+
+        getFirebaseStorageRef(this.namespace).ref(`${i.pointType.toLowerCase()}-timeline/${i.nameUsageId}.json`).getDownloadURL().then((url) => {
+
+            fetch(url)
+                .then((res) => {
+                    return res.json();
+                })
+                .then((jsonResponse: IJSONRequestObject) => {
+                    this.geoSpatialIndex = jsonResponse;
+                    this.setMarks(i)
+                }).catch((err) => {
+                    getErrorStore(this.namespace).Report(err)
+            })
+        })
+
+    }
 
   // protected subscribe(){
   //
@@ -180,7 +219,7 @@ export class TimelineStore {
     pointType: PointType,
     momentTicks: moment.Moment[],
     tScale: d3Scale.ScaleTime<number, number>,
-    objs: Map<string, ITimelineObject>
+    objs: {[key: string]: ITimelineObject}
   ) {
     // Would like to not need to listen for pointType, but we need the tick marks regardless.
 
@@ -198,7 +237,7 @@ export class TimelineStore {
       //   m.isoWeekday(day);
       // }
 
-      const obj: ITimelineObject = objs.get(m.format(fmt)) || { t: 0 };
+      const obj: ITimelineObject = objs.hasOwnProperty(m.format(fmt)) ? objs[m.format(fmt)] : { t: 0 };
 
       const mark: ITickMark = {
         moment: m,

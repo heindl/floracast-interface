@@ -1,5 +1,199 @@
+@import url('https://fonts.googleapis.com/css?family=Open+Sans+Condensed:300,700,900|Open+Sans:300,600');
+
+/*@import url('https://fonts.googleapis.com/css?family=PT+Serif:400,400i,700,700i');*/
+
+/*@import url('https://fonts.googleapis.com/css?family=Vollkorn:400,400i,600,600i,700,900');*/
+
+/*@import url(https://fonts.googleapis.com/css?family=Libre+Baskerville:400,400i,700);*/
+
+/*@import url('https://fonts.googleapis.com/css?family=Lora:400,400i,700,700i');*/
+
+:root{
+
+  --font-header: "Open Sans Condensed", sans-serif;
+  --font-body: "Open Sans", serif;
+  --font-weight-heavy: 700;
+  --font-weight-middle: 500;
+  --font-weight-light: 300;
+
+  --type-7-font-size: 6.854rem;
+  /*--type-7-line-height: 11.0898rem; !* (font-size * 1.618) *!*/
+  --type-7-line-height: 6.854rem;
+
+  --type-6-font-size: 4.236rem;
+  --type-6-line-height: 4.236rem;
+
+  --type-5-font-size: 2.618rem;
+  --type-5-line-height: 2.618rem;
+
+  --type-4-font-size: 1.618rem;
+  --type-4-line-height: var(--type-5-font-size);
+
+  --type-3-font-size: 1rem;
+  --type-3-line-height: var(--type-4-font-size);
+
+  --type-2-font-size: 0.618rem;
+  --type-2-line-height: var(--type-3-font-size);
+
+  --type-1-font-size: 0.382rem;
+  --type-1-line-height: var(--type-2-font-size);
+
+  --type-0-font-size: 0.236rem;
+  --type-0-line-height: var(--type-1-font-size);
+
+  --search-bar-height: calc(100vh * 0.09014776);
+}
+
+/*61.80339*/
+/*38.19660*/
+/*23.60679*/
+/*14.58980*/
+/*9.016994*/
+/*5.572809*/
+/*3.444185*/
+/*2.128623*/
+/*1.315561*/
+/*0.813061*/
+/*0.502499*/
+
+/* Width Percentages */
+/* .6180469715698393 */
+/* .3819530284301607 */
+/* .23606491250318957 */
+/* .14588811592697116 */
+/* .09016570823669417 */
+/* .05572240769027699 */
+/* .034439065321555615 */
+/* .021283342368721376 */
+/* .013154105295872296 */
+/* .00812923707284908 */
+
+body, .leaflet-container, input, button {
+  font-family: var(--font-body) !important;
+}
+
+
+html {
+  /* Use em for text, as opposed to rem, because it allows the user to select a font size. */
+  /* Typical browser-font size is 16px */
+  font-size: 62.5%;
+  min-width: 320px;
+  max-width: 1200px;
+  width: 100%;
+}
+
+/*@media screen and (min-width: 900px) {*/
+/*html {*/
+/*font-size: 11px;*/
+/*}*/
+/*}*/
+
+/*@media screen and (min-width: 1200px) {*/
+/*html {*/
+/*font-size: 13px;*/
+/*}*/
+/*}*/
+
 body {
   margin: 0;
   padding: 0;
-  font-family: sans-serif;
+}
+
+
+h1 {
+  font-family: var(--font-header);
+  padding:0;
+  margin:0;
+  font-size: var(--type-7-font-size);
+  line-height: var(--type-7-line-height);
+  font-weight: var(--font-weight-heavy);
+}
+
+h2 {
+  font-family: var(--font-header);
+  padding:0;
+  margin:0;
+  font-size: var(--type-6-font-size);
+  line-height: var(--type-6-line-height);
+  font-weight: var(--font-weight-heavy);
+}
+
+h3 {
+  font-family: var(--font-header);
+  padding:0;
+  margin:0;
+  font-size: var(--type-5-font-size);
+  line-height: var(--type-5-line-height);
+  font-weight: var(--font-weight-heavy);
+}
+
+h4 {
+  font-family: var(--font-body);
+  padding:0;
+  margin:0;
+  font-size: var(--type-4-font-size);
+  line-height: var(--type-4-line-height);
+  font-weight: var(--font-weight-light);
+}
+
+h5 {
+  font-family: var(--font-body);
+  padding:0;
+  margin:0;
+  font-size: var(--type-3-font-size);
+  line-height: var(--type-3-line-height);
+  font-weight: var(--font-weight-light);
+}
+
+h6 {
+  font-family: var(--font-body);
+  padding:0;
+  margin:0;
+  font-size: var(--type-2-font-size);
+  line-height: var(--type-2-line-height);
+  font-weight: var(--font-weight-light);
+}
+
+p {
+  font-family: var(--font-header);
+  padding:0;
+  margin:0;
+  font-size: var(--type-1-font-size);
+  line-height: var(--type-1-line-height);
+  font-weight: var(--font-weight-light);
+}
+
+small, .small {
+  font-family: var(--font-header);
+  padding: 0;
+  margin: 0;
+  font-size: var(--type-0-font-size);
+  line-height: var(--type-0-line-height);
+  font-weight: var(--font-weight-light);
+}
+
+.paragraph {
+  margin: 1em 0;
+}
+
+.narrow {
+  font-family: var(--font-header);
+}
+
+a {
+  text-decoration: none;
+}
+
+a,
+a:visited {
+  color: #003399;
+}
+
+a:hover {
+  color: #4078c0;
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
 }

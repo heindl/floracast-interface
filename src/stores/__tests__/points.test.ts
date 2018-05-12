@@ -1,15 +1,17 @@
 /**
  * @jest-environment floracast-jest-environment-jsdom
  */
+
 import '@firebase/firestore';
 import {} from 'jest';
 import { when } from 'mobx';
 import * as uuid from 'uuid';
+import sleep from "../../utils/sleep.mock";
 import { getCoordinateStore } from '../coordinates';
 import { getDateStore } from '../date';
-import { getMapPointStore } from '../points';
 import { getTaxaStore } from '../taxa';
-import { getViewStore, PointType } from '../view';
+
+
 
 it(
   'instantiates, parses and renders correct date',
@@ -20,20 +22,26 @@ it(
 
     await when(() => coordStore.IsReady === true);
 
-    const dateStore = getDateStore(namespace);
+      coordStore.SetZoom(6);
+    //
+    // const dateStore = getDateStore(namespace);
+    // dateStore.FromFormattedString('20180420');
+    // // // const viewStore = getViewStore(namespace);
+    // const taxaStore = getTaxaStore(namespace);
+    // taxaStore.Select('ugkG3de');
+    // // viewStore.SetPointType(PointType.Occurrences);
+    //
+    //
+    //
 
-    const viewStore = getViewStore(namespace);
-    const taxaStore = getTaxaStore(namespace);
-    taxaStore.Select('Io1ftGL');
-    viewStore.SetPointType(PointType.Occurrences);
 
-    dateStore.FromFormattedString('20170421');
 
-    coordStore.SetZoom(8);
 
-    const pointStore = getMapPointStore(namespace);
+    // const pointStore = getPointStore(namespace, PointType.Predictions);
+    //
+    // await when(() => pointStore.MapPoints.length > 0);
 
-    await when(() => pointStore.Points.length > 0);
+    // console.log(pointStore.MapPoints)
     //
     // const coordinateStore = getCoordinateStore(namespace);
     // const fireStoreRef = getFireStoreRef(namespace);
