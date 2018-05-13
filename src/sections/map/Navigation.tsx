@@ -5,8 +5,8 @@ import { Link } from 'react-router-dom';
 import Icon from '../../iconography/Icon';
 import { SeedOfLife } from '../../iconography/Icons';
 import { TaxaStore } from '../../stores/taxa';
-import { TimelineStore } from '../../stores/timeline';
-import {InFocusField, PointType, ViewStore} from '../../stores/view';
+import { MMapTimeline } from '../../stores/timeline';
+import {InFocusField, PointType, MView} from '../../stores/view';
 import './Navigation.css';
 import DateSearchField from './search-fields/DateSearchField';
 import PointTypeSearchField from './search-fields/PointTypeSearchField';
@@ -15,7 +15,7 @@ import Tick from './TimelineTick';
 
 interface ITickMarkProps{
     pointType: PointType;
-    timelineStore?: TimelineStore;
+    timelineStore?: MMapTimeline;
 }
 
 @inject('timelineStore')
@@ -39,7 +39,7 @@ class TickMarks extends React.Component<ITickMarkProps> {
 }
 
 interface INavigationProps {
-  viewStore?: ViewStore;
+  viewStore?: MView;
   taxaStore?: TaxaStore;
 }
 

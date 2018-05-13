@@ -3,12 +3,13 @@ import { interpolateSpectral } from 'd3-scale-chromatic';
 import * as _ from 'lodash';
 import {action, IReactionDisposer, observable, reaction} from 'mobx';
 import * as moment from 'moment';
-import { getCoordinateStore } from './coordinates';
-import { getDateStore } from './date';
-import {getErrorStore} from './errors';
+import {MTime} from "./date";
+import MErrors from "./errors";
 import {getFirebaseStorageRef} from './firestore';
-import {getTaxaStore} from './taxa';
-import {getViewStore, PointType} from './view';
+import {getGlobalModel} from "./globals";
+import MLocationMapCoordinates from "./location/map";
+import {MMapTaxa} from "./taxa";
+import {MView, PointType} from './view';
 
 export interface ITickMark {
   moment: moment.Moment;
@@ -46,7 +47,7 @@ interface IReactionData{
     nameUsageId?: string
 }
 
-export class TimelineStore {
+export class MMapTimeline {
 
     @observable
     public TickMarks = observable.array<ITickMark>([], {deep: false});
@@ -63,9 +64,9 @@ export class TimelineStore {
 
       this.namespace = namespace;
 
-        const viewStore = getViewStore(namespace);
-        const taxaStore = getTaxaStore(namespace);
-        const coordStore = getCoordinateStore(namespace);
+        const viewStore = getGlobalModel(namespace, MView);
+        const taxaStore = getGlobalModel(namespace, MMapTaxa);
+        const coordStore = getGlobalModel(namespace, MLocationMapCoordinates);
 
       this.UnsubscribeFetchJSONReaction = reaction(
           () => ({
@@ -133,7 +134,7 @@ export class TimelineStore {
                 generateMomentTicks(
                     i.pointType,
                     i.pointType === PointType.Predictions ?
-                        getDateStore(this.namespace).PredictionDateRange :
+                        getGlobalModel(this.namespace, MTime).PredictionDateRange :
                         occurrenceDateRange
                 ),
                 generateTimeScale(
@@ -167,7 +168,7 @@ export class TimelineStore {
                     this.geoSpatialIndex = jsonResponse;
                     this.setMarks(i)
                 }).catch((err) => {
-                    getErrorStore(this.namespace).Report(err)
+                    getGlobalModel(this.namespace, MErrors).Report(err)
             })
         })
 
@@ -350,12 +351,12 @@ function minMaxScale(v: number, globalMax: number, globalMin: number): number {
   return std * (scaleMax - scaleMin) + scaleMin;
 }
 
-const namespaces: Map<string, TimelineStore> = new Map();
+const namespaces: Map<string, MMapTimeline> = new Map();
 
-export function getTimelineStore(namespace: string): TimelineStore {
+export function getTimelineStore(namespace: string): MMapTimeline {
   let store = namespaces.get(namespace);
   if (!store) {
-    store = new TimelineStore(namespace);
+    store = new MMapTimeline(namespace);
     namespaces.set(namespace, store);
   }
   return store;

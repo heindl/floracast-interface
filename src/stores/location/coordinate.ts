@@ -1,10 +1,11 @@
 import { action, observable } from 'mobx';
-import {ErrorStore, getErrorStore} from '../errors';
+import MErrors from '../errors';
+import {getGlobalModel} from "../globals";
 
 const Asheville = [35.538851, -82.7054901];
 export const DefaultRadius: number = 160;
 
-export default class LocationCoordinateStore {
+export default class MLocationUserCoordinates {
 
     @observable
     public Latitude: number = 0;
@@ -17,11 +18,11 @@ export default class LocationCoordinateStore {
     public Radius: number = DefaultRadius; // 100 miles
 
     protected readonly namespace: string;
-    protected errorStore: ErrorStore;
+    protected errorStore: MErrors;
 
     constructor(namespace: string) {
         this.namespace = namespace;
-        this.errorStore = getErrorStore(namespace);
+        this.errorStore = getGlobalModel(namespace, MErrors);
     }
 
     public Geolocate(){

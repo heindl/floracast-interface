@@ -1,9 +1,6 @@
 import * as history from 'history';
 import {autorun, IReactionDisposer, IReactionOptions} from 'mobx';
-import {CoordinateStore, getCoordinateStore} from './coordinates';
-import {DateStore, getDateStore} from './date';
-import {getTaxaStore, TaxaStore} from './taxa';
-import {getViewStore, PointType, ViewStore} from './view';
+import {PointType} from "./view";
 
 export class RouterStore {
 
@@ -49,9 +46,9 @@ export class RouterStore {
   protected historyRef: history.History;
   protected readonly namespace: string;
 
-  protected coordStore: CoordinateStore;
-  protected dateStore: DateStore;
-  protected viewStore: ViewStore;
+  protected coordStore: MUser;
+  protected dateStore: MTime;
+  protected viewStore: MView;
   protected taxaStore: TaxaStore;
 
     protected unsubscribe: IReactionDisposer;

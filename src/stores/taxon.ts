@@ -1,7 +1,8 @@
 import {DocumentSnapshot} from "@firebase/firestore-types";
 import { action, observable } from 'mobx';
-import {ErrorStore, getErrorStore} from "./errors";
+import MErrors from "./errors";
 import {getFireStoreRef} from "./firestore";
+import {getGlobalModel} from "./globals";
 import ProtectedArea from './protected-area';
 
 export default class Taxon {
@@ -22,12 +23,12 @@ export default class Taxon {
 
     protected photo?: IPhoto;
     protected readonly namespace: string;
-    protected errorStore: ErrorStore;
+    protected errorStore: MErrors;
 
     constructor(nameUsageId: string, namespace: string, protectedAreaToken?: string) {
         this.namespace = namespace;
         this.NameUsageID = nameUsageId;
-        this.errorStore = getErrorStore(namespace);
+        this.errorStore = getGlobalModel(namespace, MErrors);
 
         if (protectedAreaToken) {
             this.ProtectedArea = new ProtectedArea(protectedAreaToken, namespace)

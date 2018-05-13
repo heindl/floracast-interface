@@ -1,8 +1,9 @@
 import {DocumentSnapshot, FirebaseFirestore} from "@firebase/firestore-types";
 import {action, observable} from 'mobx';
 import { S2CellId } from 'nodes2ts';
-import {ErrorStore, getErrorStore} from './errors';
+import MErrors from './errors';
 import {getFireStoreRef} from './firestore';
+import {getGlobalModel} from "./globals";
 
 export default class ProtectedArea {
 
@@ -23,7 +24,7 @@ export default class ProtectedArea {
 
   protected readonly namespace: string;
   protected fireStoreRef: FirebaseFirestore;
-  protected errorStore: ErrorStore;
+  protected errorStore: MErrors;
   // protected coordinateStore: CoordinateStore;
 
   // protected unsubscribeDistance: IReactionDisposer;
@@ -35,7 +36,7 @@ export default class ProtectedArea {
         this.TokenID = idToken;
 
         this.fireStoreRef = getFireStoreRef(namespace);
-        this.errorStore = getErrorStore(namespace);
+        this.errorStore = getGlobalModel(namespace, MErrors);
         // this.coordinateStore = getCoordinateStore(namespace);
 
         const coords = S2CellId.fromToken(idToken).toLatLng();

@@ -1,3 +1,5 @@
+/* tslint:disable:max-classes-per-file */
+
 import * as _ from 'lodash';
 import {action, IReactionDisposer, observable, reaction} from 'mobx';
 import {S2CellId} from "nodes2ts";
@@ -5,14 +7,17 @@ import {
     FetchOccurrenceTaxa,
     FetchPredictionTaxa, IPredictionResponse,
 } from '../geoindex/taxa';
-import {getCoordinateStore} from './coordinates';
-import {getDateStore} from './date';
-import {getErrorStore} from './errors';
+import {MTime} from "./date";
+import MErrors from "./errors";
 import {getFireStoreRef} from './firestore';
+import {getGlobalModel} from "./globals";
+import MLocationUserCoordinates from "./location/coordinate";
+import MLocationMapCoordinates from "./location/map";
 import Taxon from './taxon';
-import {getViewStore, InFocusField, PointType} from './view';
+import {InFocusField, PointType, MView} from './view';
 
-export class TaxaStore {
+
+class TaxaStore {
 
     @observable public Selected?: Taxon;
 
@@ -24,11 +29,12 @@ export class TaxaStore {
 
     protected unsubscribe: IReactionDisposer;
 
-    constructor(namespace: string) {
+    constructor(namespace: string, mCoords: typeof MLocationUserCoordinates | typeof MLocationMapCoordinates) {
         this.namespace = namespace;
-        const coordinateStore = getCoordinateStore(namespace);
-        const viewStore = getViewStore(namespace);
-        const dateStore = getDateStore(namespace);
+
+        const coordinateStore = getGlobalModel(namespace, mCoords);
+        const viewStore = getGlobalModel(namespace, MView);
+        const dateStore = getGlobalModel(namespace, MTime);
 
         this.unsubscribe = reaction(
             () => {
@@ -125,8 +131,6 @@ export class TaxaStore {
       section?: string;
                       }){
 
-        console.log("Fetching taxa", i)
-
       const go = !_.isEmpty(i.lat)
           && !_.isEmpty(i.lng)
           && !_.isEmpty(i.pointType)
@@ -144,11 +148,7 @@ export class TaxaStore {
           return
       }
 
-
-
       const listIsVisible = (i.inFocusField === InFocusField.FieldTaxon || i.section === 'forecast');
-
-      console.log("listisvisible", listIsVisible)
 
       if (!listIsVisible && this.Selected) {
         return
@@ -162,7 +162,7 @@ export class TaxaStore {
             this.setPredictionTaxa(res);
           })
           .catch((err) => {
-            getErrorStore(this.namespace).Report(err);
+            getGlobalModel(this.namespace, MErrors).Report(err);
             this.SetLoading(false);
           });
       }
@@ -173,7 +173,7 @@ export class TaxaStore {
             this.setOccurrenceTaxa(res);
           })
           .catch((err) => {
-              getErrorStore(this.namespace).Report(err);
+              getGlobalModel(this.namespace, MErrors).Report(err);
             this.SetLoading(false);
           });
       }
@@ -184,13 +184,15 @@ export class TaxaStore {
     };
 }
 
-const namespaces: Map<string, TaxaStore> = new Map();
 
-export function getTaxaStore(namespace: string): TaxaStore {
-  let store = namespaces.get(namespace);
-  if (!store) {
-    store = new TaxaStore(namespace);
-    namespaces.set(namespace, store);
-  }
-  return store;
+export class MUserTaxa extends TaxaStore {
+    constructor(namespace: string) {
+        super(namespace, MLocationUserCoordinates)
+    }
+}
+
+export class MMapTaxa extends TaxaStore {
+    constructor(namespace: string) {
+        super(namespace, MLocationMapCoordinates)
+    }
 }

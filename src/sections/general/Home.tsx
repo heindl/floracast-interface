@@ -8,8 +8,8 @@ import {
   getContactFormStore,
 } from '../../stores/contact-form';
 import { CoordinateStore, getCoordinateStore } from '../../stores/coordinates';
-import { DateStore, getDateStore } from '../../stores/date';
-import { ErrorStore, getErrorStore } from '../../stores/errors';
+import { MTime, getDateStore } from '../../stores/date';
+import { MErrors, getErrorStore } from '../../stores/errors';
 import BetaForm from './BetaForm';
 import './Home.css';
 import Masthead from './Masthead';
@@ -18,8 +18,8 @@ export default class Home extends React.Component {
 
   public stores: {
     coordinateStore: CoordinateStore;
-    dateStore: DateStore;
-    errorStore: ErrorStore;
+    dateStore: MTime;
+    errorStore: MErrorStore;
     contactFormStore: ContactFormStore;
   };
 

@@ -14,7 +14,7 @@ export enum InFocusField {
   FieldPlace,
 }
 
-export class ViewStore {
+export class MView {
 
     @observable public TaxonCardVisible: boolean = false;
     @observable public PointType: PointType = PointType.Predictions;
@@ -98,7 +98,7 @@ export class ViewStore {
   // @computed
   // public get NavigationTitle(): string {
   //   const taxaStore = getTaxaStore(this.namespace);
-  //   const dateStore: DateStore = getDateStore(this.namespace);
+  //   const dateStore: MTime = getDateStore(this.namespace);
   //   const selectedTaxon = taxaStore.Selected;
   //   const formattedDate = dateStore.Formatted;
   //
@@ -109,15 +109,4 @@ export class ViewStore {
   //   sections.push(formattedDate);
   //   return sections.join(' • ');
   // }
-}
-
-const namespaces: Map<string, ViewStore> = new Map();
-
-export function getViewStore(namespace: string): ViewStore {
-  let store = namespaces.get(namespace);
-  if (!store) {
-    store = new ViewStore(namespace);
-    namespaces.set(namespace, store);
-  }
-  return store;
 }

@@ -5,10 +5,10 @@
 import {} from 'jest';
 import { when } from 'mobx';
 import * as uuid from 'uuid';
-import {clearGlobalStores, getGlobalStore} from "../../globals";
-import CoordinateComputationStore from '../computation';
-import LocationCoordinateStore, {DefaultRadius} from '../coordinate';
-import LocationMapCoordinateStore, {ZoomDefault} from '../map';
+import {clearGlobalStores, getGlobalModel} from "../../globals";
+import {MLocationUserComputations} from '../computation';
+import MLocationUserCoordinates, {DefaultRadius} from '../coordinate';
+import MLocationMapCoordinates, {ZoomDefault} from '../map';
 import LocationPlaceStore from '../place';
 
 describe('location store suite', () => {
@@ -20,12 +20,12 @@ describe('location store suite', () => {
 
     describe('initial coordinate store', () => {
 
-        let CS: LocationCoordinateStore;
+        let CS: MLocationUserCoordinates;
 
         beforeEach(() => {
-            CS = getGlobalStore(
+            CS = getGlobalModel(
                 uuid.v4().substr(0, 5),
-                LocationCoordinateStore
+                MLocationUserCoordinates
             );
         });
         afterEach(() => {
@@ -56,9 +56,9 @@ describe('location store suite', () => {
 
         it('instantiates on multiple namespaces', async () => {
             CS.Geolocate();
-            const newCS = getGlobalStore(
+            const newCS = getGlobalModel(
                 uuid.v4().substr(0, 5),
-                LocationCoordinateStore
+                MLocationUserCoordinates
             );
             newCS.SetCoordinates(bos[0], bos[1]);
             await when(() => CS.Latitude !== 0);
@@ -71,12 +71,12 @@ describe('location store suite', () => {
 
     describe('map extended coordinate store', () => {
 
-        let CS: LocationMapCoordinateStore;
+        let CS: MLocationMapCoordinates;
 
         beforeEach(() => {
-            CS = getGlobalStore(
+            CS = getGlobalModel(
                 uuid.v4().substr(0, 5),
-                LocationMapCoordinateStore
+                MLocationMapCoordinates
             );
         });
         afterEach(() => {
@@ -117,15 +117,15 @@ describe('location store suite', () => {
     describe('place extended coordinate store', () => {
 
         let PS: LocationPlaceStore;
-        let CS: LocationCoordinateStore;
+        let CS: MLocationUserCoordinates;
 
         beforeEach(() => {
             const namespace = uuid.v4().substr(0, 5);
-            CS = getGlobalStore(
+            CS = getGlobalModel(
                 namespace,
-                LocationCoordinateStore
+                MLocationUserCoordinates
             );
-            PS = getGlobalStore(
+            PS = getGlobalModel(
                 namespace,
                 LocationPlaceStore
             );
@@ -163,18 +163,18 @@ describe('location store suite', () => {
 
     describe('coordinate store computations', () => {
 
-        let CS: LocationCoordinateStore;
-        let CCS: CoordinateComputationStore;
+        let CS: MLocationUserCoordinates;
+        let CCS: MLocationUserComputations;
 
         beforeEach(() => {
             const namespace = uuid.v4().substr(0, 5);
-            CS = getGlobalStore(
+            CS = getGlobalModel(
                 namespace,
-                LocationCoordinateStore
+                MLocationUserCoordinates
             );
-            CCS = getGlobalStore(
+            CCS = getGlobalModel(
                 namespace,
-                CoordinateComputationStore,
+                MLocationUserComputations,
                 {coordinateStoreType: 'user'}
             );
         });

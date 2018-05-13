@@ -3,21 +3,21 @@ import * as React from 'react';
 import { Link } from 'react-router-dom';
 import ConfidenceScale from "../../iconography/ConfidenceScale";
 import { CoordinateStore } from '../../stores/coordinates';
-import {DateStore} from "../../stores/date";
-import { ErrorStore } from '../../stores/errors';
+import {MTime} from "../../stores/date";
+import { MErrors } from '../../stores/errors';
 import { RouterStore } from '../../stores/router';
 import { TaxaStore } from '../../stores/taxa';
 import Taxon from '../../stores/taxon';
-import { ViewStore } from '../../stores/view';
+import { MView } from '../../stores/view';
 import './Card.css';
 
 interface ICardProps {
   taxon: Taxon;
-  errorStore?: ErrorStore;
-  viewStore?: ViewStore;
+  errorStore?: MErrorStore;
+  viewStore?: MView;
   coordinateStore?: CoordinateStore;
   taxaStore?: TaxaStore;
-  dateStore?: DateStore;
+  dateStore?: MTime;
 }
 
 @inject('viewStore', 'taxaStore', 'coordinateStore', 'dateStore')

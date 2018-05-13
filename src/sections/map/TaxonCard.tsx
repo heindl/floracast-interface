@@ -3,12 +3,12 @@ import * as React from 'react';
 import Icon from '../../iconography/Icon';
 import {Close, Loading} from '../../iconography/Icons';
 import { TaxaStore } from '../../stores/taxa';
-import {ViewStore} from "../../stores/view";
+import {MView} from "../../stores/view";
 import './TaxonCard.css';
 
 interface ITaxonCardProps {
   taxaStore?: TaxaStore;
-  viewStore?: ViewStore;
+  viewStore?: MView;
 }
 
 @inject('taxaStore', 'viewStore')

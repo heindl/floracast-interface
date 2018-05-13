@@ -5,7 +5,7 @@ import ConfidenceScale from "../../iconography/ConfidenceScale";
 // import Icon from '../../iconography/Icon';
 // import { Close } from '../../iconography/Icons';
 import ProtectedArea from '../../stores/protected-area';
-import {ViewStore} from "../../stores/view";
+import {MView} from "../../stores/view";
 import './ProtectedAreaTooltip.css';
 
 interface ITooltipProps {
@@ -15,7 +15,7 @@ interface ITooltipProps {
     longitude: number,
     prediction: number;
     namespace: string;
-    viewStore?: ViewStore;
+    viewStore?: MView;
 }
 
 interface ITooltipState {

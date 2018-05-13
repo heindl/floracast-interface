@@ -1,12 +1,12 @@
 import * as classnames from 'classnames';
 import { inject, observer } from 'mobx-react';
 import * as React from 'react';
-import { DateStore } from '../../../stores/date';
-import { InFocusField, PointType, ViewStore } from '../../../stores/view';
+import { MTime } from '../../../stores/date';
+import { InFocusField, PointType, MView } from '../../../stores/view';
 
 interface IDateFieldProps {
-  dateStore?: DateStore;
-  viewStore?: ViewStore;
+  dateStore?: MTime;
+  viewStore?: MView;
   setRef: (ref: HTMLDivElement) => void;
 }
 

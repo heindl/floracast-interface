@@ -5,9 +5,9 @@ import * as _ from 'lodash';
 import { inject, observer } from 'mobx-react';
 import { toWords } from 'number-to-words';
 import * as React from 'react';
-import { ErrorStore } from '../../../stores/errors';
+import { MErrors } from '../../../stores/errors';
 import { TaxaStore } from '../../../stores/taxa';
-import { InFocusField, ViewStore } from '../../../stores/view';
+import { InFocusField, MView } from '../../../stores/view';
 
 interface IAlgoliaTaxaResponse {
   CommonName?: string;
@@ -21,8 +21,8 @@ interface IAlgoliaTaxaResponse {
 
 interface ITaxaSearchFieldProps {
   taxaStore?: TaxaStore;
-  viewStore?: ViewStore;
-  errorStore?: ErrorStore;
+  viewStore?: MView;
+  errorStore?: MErrorStore;
   setRef: (ref: HTMLDivElement) => void;
 }
 
@@ -211,7 +211,7 @@ interface ITaxaFieldElementProps{
   nameUsageId: string;
   scientificName: string;
     taxaStore?: TaxaStore;
-    viewStore?: ViewStore;
+    viewStore?: MView;
 }
 
 @inject('taxaStore', 'viewStore')

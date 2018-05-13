@@ -6,11 +6,11 @@ import {
   getContactFormStore,
 } from '../../stores/contact-form';
 import { CoordinateStore, getCoordinateStore } from '../../stores/coordinates';
-import { DateStore, getDateStore } from '../../stores/date';
-import { ErrorStore, getErrorStore } from '../../stores/errors';
+import { MTime, getDateStore } from '../../stores/date';
+import { MErrors, getErrorStore } from '../../stores/errors';
 import { getRouterStore, RouterStore } from '../../stores/router';
 import { getTaxaStore, TaxaStore } from '../../stores/taxa';
-import { getViewStore, ViewStore } from '../../stores/view';
+import { getViewStore, MView } from '../../stores/view';
 import ForecastPage from './Page';
 import './Page.css';
 
@@ -33,10 +33,10 @@ class ForecastIndex extends React.Component<Props> {
 
   public stores: {
     coordinateStore: CoordinateStore;
-    dateStore: DateStore;
-    errorStore: ErrorStore;
+    dateStore: MTime;
+    errorStore: MErrorStore;
     taxaStore?: TaxaStore;
-    viewStore: ViewStore;
+    viewStore: MView;
     contactFormStore: ContactFormStore;
     routerStore?: RouterStore;
   };

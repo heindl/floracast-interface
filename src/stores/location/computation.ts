@@ -1,21 +1,51 @@
+/* tslint:disable:max-classes-per-file */
+
 import formatcoords from 'formatcoords';
 import * as geolib from 'geolib';
 import { computed } from 'mobx';
 import {S2CellId, S2LatLng, S2RegionCoverer, Utils} from 'nodes2ts';
-import {getGlobalStore} from "../globals";
-import LocationCoordinateStore from "./coordinate";
-import LocationMapCoordinateStore from "./map";
+import {getGlobalModel} from "../globals";
+import MLocationUserCoordinates from "./coordinate";
+import MLocationMapCoordinates from "./map";
+
+interface IBearing {
+    s: string;
+    i: number;
+}
+
+function symbolFromBearing(b: number): string {
+    if (b < 0) {
+        b = 180 + b + 180;
+    }
+    switch (true) {
+        case b === 0:
+            return 'N';
+        case b > 0 && b < 90:
+            return 'NE';
+        case b === 90:
+            return 'E';
+        case b > 90 && b < 180:
+            return 'SE';
+        case b === 180:
+            return 'S';
+        case b > 180 && b < 270:
+            return 'SW';
+        case b === 270:
+            return 'W';
+        case b > 270:
+            return 'NW';
+        default:
+            return '';
+    }
+}
 
 
-export default class CoordinateComputationStore {
+class MLocationComputations {
 
-    protected readonly coordinateStore: LocationCoordinateStore;
+    protected readonly coordinateStore: MLocationUserCoordinates;
 
-    constructor(namespace: string, additionalParameters: {coordinateStoreType: 'map' | 'user'}) {
-        const s = additionalParameters.coordinateStoreType === 'map' ?
-            LocationMapCoordinateStore :
-            LocationCoordinateStore;
-        this.coordinateStore = getGlobalStore(namespace, s)
+    constructor(namespace: string, mCoords: typeof MLocationUserCoordinates | typeof MLocationMapCoordinates) {
+        this.coordinateStore = getGlobalModel(namespace, mCoords)
     }
 
     @computed
@@ -147,33 +177,14 @@ export default class CoordinateComputationStore {
 
 }
 
-interface IBearing {
-    s: string;
-    i: number;
+export class MLocationMapComputations extends MLocationComputations {
+    constructor(namespace: string) {
+        super(namespace, MLocationMapCoordinates)
+    }
 }
 
-function symbolFromBearing(b: number): string {
-    if (b < 0) {
-        b = 180 + b + 180;
-    }
-    switch (true) {
-        case b === 0:
-            return 'N';
-        case b > 0 && b < 90:
-            return 'NE';
-        case b === 90:
-            return 'E';
-        case b > 90 && b < 180:
-            return 'SE';
-        case b === 180:
-            return 'S';
-        case b > 180 && b < 270:
-            return 'SW';
-        case b === 270:
-            return 'W';
-        case b > 270:
-            return 'NW';
-        default:
-            return '';
+export class MLocationUserComputations extends MLocationComputations {
+    constructor(namespace: string) {
+        super(namespace, MLocationUserCoordinates)
     }
 }

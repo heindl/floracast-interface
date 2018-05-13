@@ -5,7 +5,7 @@
 import {} from 'jest';
 import moment = require('moment');
 import * as uuid from 'uuid';
-import { DateStore, getDateStore } from '../date';
+import { MTime, getDateStore } from '../date';
 
 it('shifts a date to a predicted weekday', () => {
   interface StandardWeekdayTest {
@@ -23,7 +23,7 @@ it('shifts a date to a predicted weekday', () => {
     { i: -1, s: '2018-04-17', e: '2018-04-13' },
   ].forEach((t: StandardWeekdayTest) => {
     const m = moment(t.s);
-    const r = DateStore.toStandardDay(m, t.i);
+    const r = MTime.toStandardDay(m, t.i);
     expect(r.format('YYYY-MM-DD')).toEqual(t.e);
   });
 });

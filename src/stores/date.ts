@@ -30,7 +30,7 @@ const WeekdaysPredictionsGenerated: { [key: number]: string } = {
 //     new Date(2016, 11, 1)
 // ];
 
-export class DateStore {
+export class MTime {
 
     public readonly PredictionDateRange: [moment.Moment, moment.Moment];
 
@@ -96,17 +96,6 @@ export class DateStore {
       this.activeUnix = m.unix();
     }
   }
-}
-
-const namespaces: Map<string, DateStore> = new Map();
-
-export function getDateStore(namespace: string): DateStore {
-  let store = namespaces.get(namespace);
-  if (!store) {
-    store = new DateStore(namespace);
-    namespaces.set(namespace, store);
-  }
-  return store;
 }
 
 // Zero direction means find the nearest day, forward or backward.

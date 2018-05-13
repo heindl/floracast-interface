@@ -1,12 +1,12 @@
 // import {GeocoderRequest, GeocoderResult, GeocoderStatus} from 'map';
 import {} from '@types/googlemaps';
 import {action, IReactionDisposer, observable, reaction, when} from 'mobx';
-import {ErrorStore} from '../errors';
-import {getGlobalStore} from "../globals";
-import LocationCoordinateStore from "./coordinate";
+import MErrors from '../errors';
+import {getGlobalModel} from "../globals";
+import MLocationUserCoordinates from "./coordinate";
 import GeocoderResult = google.maps.GeocoderResult;
 
-export default class CoordinatePlaceStore {
+export default class MLocationPlace {
 
     @observable
     public Locality: string;
@@ -21,15 +21,15 @@ export default class CoordinatePlaceStore {
     public GoogleMapsScriptHasLoaded: boolean = false;
 
     protected readonly namespace: string;
-    protected readonly coordinateStore: LocationCoordinateStore;
-    protected readonly errorStore: ErrorStore;
+    protected readonly coordinateStore: MLocationUserCoordinates;
+    protected readonly errorStore: MErrors;
 
     protected UnsubscribeGeocodeReaction: IReactionDisposer;
 
     constructor(namespace: string) {
-        this.coordinateStore = getGlobalStore(namespace, LocationCoordinateStore);
+        this.coordinateStore = getGlobalModel(namespace, MLocationUserCoordinates);
         this.namespace = namespace;
-        this.errorStore = getGlobalStore(namespace, ErrorStore);
+        this.errorStore = getGlobalModel(namespace, MErrors);
 
         this.fetchGoogleMapScript();
 

@@ -2,14 +2,14 @@ import {bounds} from "@mapbox/geo-viewport";
 import * as geolib from "geolib";
 import * as _ from 'lodash';
 import {action, IReactionDisposer, observable, reaction} from 'mobx';
-import LocationCoordinateStore from "./coordinate";
+import MLocationUserCoordinates from "./coordinate";
 
 export const ZoomMinimum = 6;
 export const ZoomDefault = 9;
 
 const TileSize = 256;
 
-export default class LocationMapCoordinateStore extends LocationCoordinateStore{
+export default class MLocationMapCoordinates extends MLocationUserCoordinates{
 
     @observable
     public Zoom: number = ZoomDefault;

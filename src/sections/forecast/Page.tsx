@@ -4,8 +4,8 @@ import { Link } from 'react-router-dom';
 import Icon from '../../iconography/Icon';
 import { ChevronLeft, ChevronRight } from '../../iconography/Icons';
 import { CoordinateStore } from '../../stores/coordinates';
-import { DateStore } from '../../stores/date';
-import { ErrorStore } from '../../stores/errors';
+import { MTime } from '../../stores/date';
+import { MErrors } from '../../stores/errors';
 import { TaxaStore } from '../../stores/taxa';
 import Header from '../general/Header';
 import SmallForm from '../general/SmallForm';
@@ -14,9 +14,9 @@ import './Page.css';
 
 interface IForecastPageProps {
   coordinateStore?: CoordinateStore;
-  errorStore?: ErrorStore;
+  errorStore?: MErrorStore;
   taxaStore?: TaxaStore;
-  dateStore?: DateStore;
+  dateStore?: MTime;
 }
 
 @inject('coordinateStore', 'errorStore', 'taxaStore', 'dateStore')

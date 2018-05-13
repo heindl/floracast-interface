@@ -2,13 +2,13 @@ import { Provider } from 'mobx-react';
 import * as React from 'react';
 import { RouteComponentProps, withRouter } from 'react-router';
 import { CoordinateStore, getCoordinateStore } from '../../stores/coordinates';
-import { DateStore, getDateStore } from '../../stores/date';
-import { ErrorStore, getErrorStore } from '../../stores/errors';
-import { getPointStore, PointStore } from '../../stores/points';
+import { MTime, getDateStore } from '../../stores/date';
+import { MErrors, getErrorStore } from '../../stores/errors';
+import { getPointStore, MMapPoints } from '../../stores/points';
 import { getRouterStore, RouterStore } from '../../stores/router';
 import { getTaxaStore, TaxaStore } from '../../stores/taxa';
-import { getTimelineStore, TimelineStore } from '../../stores/timeline';
-import {getViewStore, PointType, ViewStore} from '../../stores/view';
+import { getTimelineStore, MMapTimeline } from '../../stores/timeline';
+import {getViewStore, PointType, MView} from '../../stores/view';
 import Navigation from './Navigation';
 import PointMap from './PointMap';
 import TaxonCard from "./TaxonCard";
@@ -44,13 +44,13 @@ class Index extends React.Component<Props> {
 
   public stores: {
     coordinateStore: CoordinateStore;
-    dateStore: DateStore;
-    errorStore: ErrorStore;
-    occurrencePointStore: PointStore;
-      predictionPointStore: PointStore;
+    dateStore: MTime;
+    errorStore: MErrorStore;
+    occurrencePointStore: MMapPoints;
+      predictionPointStore: MMapPoints;
     taxaStore: TaxaStore;
-    timelineStore: TimelineStore;
-    viewStore: ViewStore;
+    timelineStore: MMapTimeline;
+    viewStore: MView;
   };
 
     protected routerStore: RouterStore;

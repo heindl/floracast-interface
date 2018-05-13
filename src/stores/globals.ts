@@ -11,7 +11,7 @@ interface IClassConstructable {
     new(namespace: string, additionalParameters?: object): any;
 }
 
-export function getGlobalStore(namespace: string, c: IClassConstructable, additionalParameters?: object) {
+export function getGlobalModel(namespace: string, c: IClassConstructable, additionalParameters?: object) {
     if (namespace.trim() === '') {
         throw Error(`Invalid Namespace provided to get global namespace`);
     }

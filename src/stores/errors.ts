@@ -3,7 +3,7 @@
 import { action, observable } from 'mobx';
 // import { warn } from 'winston';
 
-export class ErrorStore {
+export default class MErrors {
   @observable public ErrorMessage: string = '';
   protected readonly namespace: string;
   // protected errorReporter: ErrorReporting;
@@ -26,7 +26,7 @@ export class ErrorStore {
     // if (this.errorReporter) {
     //     this.errorReporter.report(error);
     // } else {
-    console.log(error.message, message || '', JSON.stringify(params || {}));
+    console.log(error.message, ":", message || '', ":", JSON.stringify(params || {}));
     // }
   };
 
@@ -42,15 +42,4 @@ export class ErrorStore {
         console.log("Warning", error.message, message || '', JSON.stringify(params || {}));
         // }
     };
-}
-
-const namespaces: Map<string, ErrorStore> = new Map();
-
-export function getErrorStore(namespace: string): ErrorStore {
-  let store = namespaces.get(namespace);
-  if (!store) {
-    store = new ErrorStore(namespace);
-    namespaces.set(namespace, store);
-  }
-  return store;
 }

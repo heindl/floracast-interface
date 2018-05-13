@@ -2,7 +2,7 @@
 import * as classNames from 'classnames';
 import { inject, observer } from 'mobx-react';
 import * as React from 'react';
-import { DateStore } from '../../stores/date';
+import { MTime } from '../../stores/date';
 import { ITickMark } from '../../stores/timeline';
 import './TimelineTick.css';
 
@@ -11,7 +11,7 @@ const minCircleRadius = 20;
 
 interface ITickProps {
   mark: ITickMark;
-  dateStore?: DateStore;
+  dateStore?: MTime;
 }
 
 interface ITickState {

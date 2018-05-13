@@ -14,7 +14,7 @@ import { RouteComponentProps, withRouter } from 'react-router';
 import Icon from "../../iconography/Icon";
 import {Search} from "../../iconography/Icons";
 import { CoordinateStore } from '../../stores/coordinates';
-import { ErrorStore } from '../../stores/errors';
+import { MErrors } from '../../stores/errors';
 import { RouterStore } from '../../stores/router';
 import { PointType } from '../../stores/view';
 import Header from '../general/Header';
@@ -22,7 +22,7 @@ import './Masthead.css';
 
 interface IMastheadProps {
   coordinateStore?: CoordinateStore;
-  errorStore?: ErrorStore;
+  errorStore?: MErrorStore;
 }
 
 function importRandomImage(): string {

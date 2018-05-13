@@ -8,7 +8,7 @@ import * as ReactLeaflet from 'react-leaflet';
 import {CoordinateStore} from "../../stores/coordinates";
 import {IMapPoint} from "../../stores/points";
 import {GetColor} from "../../stores/timeline";
-import { ViewStore } from '../../stores/view';
+import { MView } from '../../stores/view';
 import './PointMarker.css';
 import ProtectedAreaTooltip from "./ProtectedAreaTooltip";
 
@@ -88,7 +88,7 @@ class PredictionDivIcon extends React.Component<IPredictionDivIconProps> {
 interface IPointMarkerProps {
   point: IMapPoint;
   namespace: string;
-  viewStore?: ViewStore;
+  viewStore?: MView;
     coordinateStore?: CoordinateStore;
 }
 

@@ -6,8 +6,8 @@ import * as ReactLeaflet from 'react-leaflet';
 import Icon from '../../iconography/Icon';
 import {Minus, Navigate, Plus} from '../../iconography/Icons';
 import { CoordinateStore } from '../../stores/coordinates';
-import { PointStore } from '../../stores/points';
-import {PointType, ViewStore} from "../../stores/view";
+import { MMapPoints } from '../../stores/points';
+import {PointType, MView} from "../../stores/view";
 // Copy css from https://unpkg.com/leaflet@1.3.1.css
 // Ensure that relative image links are replaced with prepended with https://unpkg.com/leaflet@1.3.1/dist/.
 import './leaflet@1.3.1.css';
@@ -16,7 +16,7 @@ import PointMarker from './PointMarker';
 
 
 interface IPredictionFeatureGroupProps {
-    predictionPointStore?: PointStore;
+    predictionPointStore?: MMapPoints;
     namespace: string;
 }
 
@@ -45,7 +45,7 @@ class PredictionFeatureGroup extends React.Component<IPredictionFeatureGroupProp
 }
 
 interface IOccurrenceFeatureGroupProps {
-    occurrencePointStore?: PointStore;
+    occurrencePointStore?: MMapPoints;
     namespace: string;
 }
 
@@ -78,7 +78,7 @@ class OccurrenceFeatureGroup extends React.Component<IOccurrenceFeatureGroupProp
 
 interface IPointMapProps {
   coordinateStore?: CoordinateStore;
-  viewStore?: ViewStore;
+  viewStore?: MView;
   namespace: string;
 }
 

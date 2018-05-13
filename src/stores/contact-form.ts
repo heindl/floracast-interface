@@ -1,7 +1,8 @@
 import {FirebaseFirestore} from "@firebase/firestore-types";
 import { observable } from 'mobx';
-import {ErrorStore, getErrorStore} from './errors';
+import MErrors from './errors';
 import {getFireStoreRef} from './firestore';
+import {getGlobalModel} from "./globals";
 
 export enum ContactFormStateCode {
   Initial,
@@ -20,11 +21,11 @@ export class ContactFormStore {
   protected readonly namespace: string;
 
   protected fireStoreRef: FirebaseFirestore;
-  protected errorStore: ErrorStore;
+  protected errorStore: MErrors;
 
   constructor(namespace: string) {
     this.namespace = namespace;
-    this.errorStore = getErrorStore(namespace);
+    this.errorStore = getGlobalModel(namespace, MErrors);
     this.fireStoreRef = getFireStoreRef(namespace);
   }
 
@@ -61,15 +62,4 @@ export class ContactFormStore {
         this.errorStore.Report(err);
       });
   }
-}
-
-const namespaces: Map<string, ContactFormStore> = new Map();
-
-export function getContactFormStore(namespace: string): ContactFormStore {
-  let store = namespaces.get(namespace);
-  if (!store) {
-    store = new ContactFormStore(namespace);
-    namespaces.set(namespace, store);
-  }
-  return store;
 }

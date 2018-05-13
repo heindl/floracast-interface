@@ -1,12 +1,12 @@
 import * as classnames from 'classnames';
 import { inject, observer } from 'mobx-react';
 import * as React from 'react';
-import { ErrorStore } from '../../../stores/errors';
-import { InFocusField, PointType, ViewStore } from '../../../stores/view';
+import { MErrors } from '../../../stores/errors';
+import { InFocusField, PointType, MView } from '../../../stores/view';
 
 interface IViewStoreProps {
-  viewStore?: ViewStore;
-  errorStore?: ErrorStore;
+  viewStore?: MView;
+  errorStore?: MErrorStore;
   setRef: (ref: HTMLDivElement) => void;
 }
 
