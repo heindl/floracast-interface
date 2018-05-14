@@ -1,6 +1,6 @@
 
 
-const namespaces: {[namespace: string]: INamespace} = {}
+const namespaces: {[namespace: string]: INamespace} = {};
 
 interface INamespace{
     [className: string]: any
@@ -8,10 +8,10 @@ interface INamespace{
 
 interface IClassConstructable {
     name: string;
-    new(namespace: string, additionalParameters?: object): any;
+    new(namespace: string): any;
 }
 
-export function getGlobalModel(namespace: string, c: IClassConstructable, additionalParameters?: object) {
+export function getGlobalModel(namespace: string, c: IClassConstructable) {
     if (namespace.trim() === '') {
         throw Error(`Invalid Namespace provided to get global namespace`);
     }
@@ -19,7 +19,7 @@ export function getGlobalModel(namespace: string, c: IClassConstructable, additi
         namespaces[namespace] = {}
     }
     if (!(namespaces[namespace].hasOwnProperty(c.name))) {
-        namespaces[namespace][c.name] = new c(namespace, additionalParameters)
+        namespaces[namespace][c.name] = new c(namespace)
     }
     return namespaces[namespace][c.name];
 }

@@ -21,20 +21,24 @@ export interface IMapPoint{
     id: string;
     pointType: PointType;
     prediction?: number;
-    date?: string;
+    date: string;
     latitude: number;
     longitude: number;
 }
 
-class MMapPoints {
+export class MMapPoints {
 
     @observable
-    public MapPoints = observable.array<IMapPoint>();
+    public MapPoints = observable.array<IMapPoint>([], {deep: false});
 
     @observable
     public IsLoading: boolean = false;
 
-    protected geoindex: kdbush.KDBush<TJSONResponsePoint> = kdbush([], (a) => a[2], (a) => a[1]);
+    protected geoindex: kdbush.KDBush<IMapPoint> = kdbush(
+        [],
+        (a: IMapPoint) => a.longitude,
+        (a: IMapPoint) => a.latitude
+    );
 
   protected readonly namespace: string;
     protected readonly pointType: PointType;
@@ -47,7 +51,7 @@ class MMapPoints {
         this.namespace = namespace;
         this.pointType = pointType;
         const coordinateStore = getGlobalModel(namespace, MLocationMapCoordinates);
-        const dateStore = getGlobalModel(namespace, MTime);
+        const dateStore: MTime = getGlobalModel(namespace, MTime);
         const taxaStore = getGlobalModel(namespace, MMapTaxa);
 
         this.UnsubscribeFetchJSONReaction = reaction(
@@ -68,15 +72,38 @@ class MMapPoints {
                         longitude: coordinateStore.Longitude,
                         radius: coordinateStore.Radius,
                     }
-
                 },
                 (i) => this.setMapPoints(i),
                 {
                     fireImmediately: false,
                     name: `${pointType} Date Location Reaction`
                 },
-        )
+        );
 
+    }
+
+    public GetPoints(latitude: number, longitude: number, radius: number, date: string): IMapPoint[] {
+
+        if (latitude === 0 || longitude === 0 || radius === 0 || date.trim() === '') {
+            return []
+        }
+
+        const filterByDate = (v: IMapPoint) => {
+            if (date.length === 2) {
+                // Assume to be month.
+                return v.date.substr(4, 2) === date;
+            }
+            return v.date === date;
+        };
+
+        return geokdbush.around(
+            this.geoindex,
+            longitude,
+            latitude,
+            undefined,
+            radius,
+            filterByDate,
+        );
     }
 
     protected dispose() {
@@ -84,14 +111,13 @@ class MMapPoints {
         this.UnsubscribeFetchJSONReaction();
     };
 
-
     @action
     protected setMapPoints(i?: {
+        date: string;
         isLoading: boolean;
         latitude: number;
         longitude: number;
         radius: number;
-        date: string;
     }) {
         const go = !_.isNil(i)
             && this.geoindex.points.length > 0
@@ -99,37 +125,14 @@ class MMapPoints {
             && i.latitude !== 0
             && i.longitude !== 0
             && i.radius !== 0
-            && i.date !== '';
+            && i.date.length === 8;
 
         if (!i || !go) {
             this.MapPoints.clear();
             return
         }
 
-        const dateInt = parseInt(i.date, 10);
-
-        this.MapPoints.replace(
-            _.map<TJSONResponsePoint, IMapPoint>(
-                geokdbush.around(
-                    this.geoindex,
-                    i.longitude,
-                    i.latitude,
-                    undefined,
-                    i.radius,
-                    (a: TJSONResponsePoint) => {
-                        return a[0] === dateInt
-                    }
-                ),
-                (a) => ({
-                    date: this.pointType === PointType.Predictions ? undefined : a[0].toString(),
-                    id: a.length === 5 ? a[4] : S2Cell.fromLatLng(S2LatLng.fromDegrees(a[1], a[2]).normalized()).id.toToken(),
-                    latitude: a[1],
-                    longitude: a[2],
-                    pointType: this.pointType,
-                    prediction: this.pointType === PointType.Predictions ? a[3] : undefined,
-                })
-            )
-        )
+        this.MapPoints.replace(this.GetPoints(i.latitude, i.longitude, i.radius, i.date));
     }
 
 
@@ -143,22 +146,24 @@ class MMapPoints {
         this.setLoading(true);
 
         if (!nameUsageId || nameUsageId === '') {
-            this.geoindex = kdbush([], (a) => a[2], (a) => a[1]);
+            this.geoindex = kdbush<IMapPoint>(
+                [],
+                (a: IMapPoint) => a.longitude,
+                (a: IMapPoint) => a.latitude
+            );
             this.setLoading(false);
             return
         }
 
-
-
         getFirebaseStorageRef(this.namespace).ref(`${this.pointType.toLowerCase()}/${nameUsageId}.csv`).getDownloadURL().then((url) => {
-            const res: TJSONResponsePoint[] = [];
+            const res: IMapPoint[] = [];
             const mErrors = getGlobalModel(this.namespace, MErrors);
             Papa.parse(url, {
                 complete: () => {
-                    this.geoindex = kdbush<TJSONResponsePoint>(
+                    this.geoindex = kdbush<IMapPoint>(
                         res,
-                        (a) => a[2],
-                        (a) => a[1]
+                        (a: IMapPoint) => a.longitude,
+                        (a: IMapPoint) => a.latitude
                     );
                     this.setLoading(false);
                 },
@@ -171,13 +176,26 @@ class MMapPoints {
                         {'PointType': this.pointType, 'NameUsageId': nameUsageId},
                         `Could not parse CSV file`
                     );
-                    this.geoindex = kdbush([], (a) => a[2], (a) => a[1]);
+                    this.geoindex = kdbush(
+                        [],
+                        (a: IMapPoint) => a.longitude,
+                        (a: IMapPoint) => a.latitude
+                    );
                     this.setLoading(false)
                 },
                 fastMode: true,
                 header: false,
                 step: (row, parser) => {
-                    res.push(row.data[0] as TJSONResponsePoint);
+                    const a = row.data[0] as TJSONResponsePoint;
+                    res.push({
+                        date: a[0].toString(),
+                        id: a.length === 5 ? a[4] : S2Cell.fromLatLng(S2LatLng.fromDegrees(a[1], a[2]).normalized()).id.toToken(),
+                        latitude: a[1],
+                        longitude: a[2],
+                        pointType: this.pointType,
+                        prediction: this.pointType === PointType.Predictions ? a[3] : undefined,
+                    });
+
                     if (row.errors.length > 0) {
                         row.errors.forEach((err) => {
                             mErrors.Report(

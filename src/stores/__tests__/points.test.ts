@@ -8,50 +8,75 @@ import { when } from 'mobx';
 import * as PapaParse from 'papaparse';
 import * as uuid from 'uuid';
 import {MTime} from '../date';
-import {getGlobalModel} from "../globals";
+import {clearGlobalStores, getGlobalModel} from "../globals";
 import MLocationMapCoordinates from "../location/map";
 import {MMapPredictions} from "../points";
 import {MMapTaxa} from "../taxa";
+import {MMapPredictionTimeline} from "../timeline";
 
 PapaParse.RemoteChunkSize = undefined; // Resolve an issue with header type.
 
-it(
-  'instantiates, parses and renders correct date',
-  async () => {
-    const namespace = uuid.v4().substr(0, 5);
+const MN = [44.9708547, -93.4012199];
+const CHI = [41.8339058, -88.0114663];
 
-    const coordStore: MLocationMapCoordinates = getGlobalModel(namespace, MLocationMapCoordinates);
+describe('point model suite', () => {
 
-    coordStore.SetCoordinates(44.9708547,-93.4012199); // Minneapolis
-    coordStore.SetZoom(6);
-    const dateStore: MTime = getGlobalModel(namespace, MTime);
-    dateStore.FromFormattedString('20170908');
-    const taxaStore: MMapTaxa = getGlobalModel(namespace, MMapTaxa);
-    taxaStore.Select('ugkG3de');
+    describe('base point store',() => {
+            
+            let namespace: string;
+            let mCoords: MLocationMapCoordinates;
+            let mTime: MTime;
+            let mTaxa: MMapTaxa;
+            let mPredictions: MMapPredictions;
 
-    const mPredictions = getGlobalModel(namespace, MMapPredictions);
+            beforeEach(() => {
+                namespace = uuid.v4().substr(0, 5);
+                mCoords = getGlobalModel(namespace, MLocationMapCoordinates);
+                mTime = getGlobalModel(namespace, MTime);
+                mTaxa = getGlobalModel(namespace, MMapTaxa);
+                mPredictions = getGlobalModel(namespace, MMapPredictions);
+                mCoords.SetCoordinates(MN[0], MN[1]); // Minneapolis
+                mCoords.SetZoom(6);
+                mTime.FromFormattedString('20170908');
+                mTaxa.Select('ugkG3de');
+            });
+            afterEach(() => {
+                clearGlobalStores();
+            });
 
-    // const pointStore = getPointStore(namespace, PointType.Predictions);
-    //
-    await when(() => mPredictions.MapPoints.length > 0);
+            it.skip('instatiates and fetches csv', async () => {
+                await when(() => mPredictions.IsLoading === false);
+                expect(mPredictions.MapPoints.length).toEqual(82);
+            });
 
-    expect(mPredictions.MapPoints.length).toEqual(82);
+                it.skip('updates points on location changes', async () => {
+                    await when(() => mPredictions.IsLoading === false);
+                    expect(mPredictions.MapPoints.length).toEqual(82);
+                    mCoords.SetZoom(7);
 
-    coordStore.SetZoom(7);
+                    expect(mPredictions.MapPoints.length).toEqual(41);
 
-      expect(mPredictions.MapPoints.length).toEqual(41);
+                    mCoords.SetZoom(6);
 
-      coordStore.SetZoom(6);
+                    expect(mPredictions.MapPoints.length).toEqual(82);
 
-      expect(mPredictions.MapPoints.length).toEqual(82);
+                    mTime.FromFormattedString('20170929');
 
-      dateStore.FromFormattedString('20170929');
+                    expect(mPredictions.MapPoints.length).toEqual(40);
 
-      expect(mPredictions.MapPoints.length).toEqual(40);
+                    mCoords.SetCoordinates(CHI[0], CHI[1]);
 
-      coordStore.SetCoordinates(41.8339058,-88.0114663);
+                    expect(mPredictions.MapPoints.length).toEqual(227);
+                });
+        
+            it('generates timeline marks and updates when scaled', async () => {
+                    const mTimeline: MMapPredictionTimeline = getGlobalModel(namespace, MMapPredictionTimeline);
+                    await when(() => mTimeline.TickMarks.length > 0);
+                    expect(mTimeline.TickMarks.filter((m) => m.pointCount > 0).length).toEqual(40);
+                    mCoords.SetCoordinates(CHI[0], CHI[1]);
+                    await when(() => mTimeline.TickMarks.filter((m) => m.pointCount > 0).length > 41);
+                    expect(mTimeline.TickMarks.filter((m) => m.pointCount > 0).length).toEqual(48);
+            });
+    });
 
-      expect(mPredictions.MapPoints.length).toEqual(227);
-  },
-  10000
-);
+});

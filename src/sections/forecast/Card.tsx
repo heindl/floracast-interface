@@ -1,35 +1,34 @@
-import { inject, observer } from 'mobx-react';
+import {computed} from "mobx";
+import { observer } from 'mobx-react';
 import * as React from 'react';
 import { Link } from 'react-router-dom';
 import ConfidenceScale from "../../iconography/ConfidenceScale";
-import { CoordinateStore } from '../../stores/coordinates';
 import {MTime} from "../../stores/date";
-import { MErrors } from '../../stores/errors';
+import {getGlobalModel} from "../../stores/globals";
+import {MLocationUserComputations} from "../../stores/location/computation";
+import MLocationUserCoordinates from "../../stores/location/coordinate";
 import { RouterStore } from '../../stores/router';
-import { TaxaStore } from '../../stores/taxa';
+import {MUserTaxa} from '../../stores/taxa';
 import Taxon from '../../stores/taxon';
 import { MView } from '../../stores/view';
 import './Card.css';
 
 interface ICardProps {
   taxon: Taxon;
-  errorStore?: MErrorStore;
-  viewStore?: MView;
-  coordinateStore?: CoordinateStore;
-  taxaStore?: TaxaStore;
-  dateStore?: MTime;
 }
 
-@inject('viewStore', 'taxaStore', 'coordinateStore', 'dateStore')
 @observer
 export default class Card extends React.Component<ICardProps> {
 
-  public constructor(props: ICardProps) {
-    super(props);
-    if (props.taxon.ProtectedArea) {
-      props.taxon.ProtectedArea.Hydrate()
-    }
-  }
+    protected viewStore: MView;
+
+    public constructor(props: ICardProps) {
+        super(props);
+        if (props.taxon.ProtectedArea) {
+          props.taxon.ProtectedArea.Hydrate()
+        }
+        this.viewStore = getGlobalModel('default', MView);
+      }
 
   // @computed get ProtectedAreaName(): string {
   //     // correct; computed property will track the `user.name` property
@@ -37,26 +36,15 @@ export default class Card extends React.Component<ICardProps> {
   // }
 
   public render() {
-    const { taxon, viewStore, coordinateStore, dateStore } = this.props;
-    if (!viewStore || !coordinateStore || !dateStore) {
-      return;
-    }
 
-      const bearingFunc = coordinateStore.BearingToFunc;
-
-    const mapPath = RouterStore.FormMapPath({
-      coordStr: coordinateStore.Formatted,
-        date: dateStore.DateString,
-        nameUsageId: taxon.NameUsageID,
-      pointType: viewStore.PointType,
-    });
+      const {taxon} = this.props;
 
     return (
       <div className="forecast-card">
 
         <div className="forecast-card-taxon">
           <h3 className="forecast-card-taxon-common-name">
-            <Link onClick={this.selectTaxon} to={mapPath}>{taxon.CommonName}</Link>
+            <Link onClick={this.selectTaxon} to={this.mapPath()}>{taxon.CommonName}</Link>
           </h3>
           <h4 className="forecast-card-taxon-scientific-name">{taxon.ScientificName}</h4>
         </div>
@@ -65,7 +53,7 @@ export default class Card extends React.Component<ICardProps> {
               <div className="forecast-card-protected-area">
 
                     <h4 className="narrow forecast-card-protected-area-name">
-                        <Link onClick={this.selectProtectedArea} to={mapPath}>
+                        <Link onClick={this.selectProtectedArea} to={this.mapPath()}>
                             {taxon.ProtectedArea.Name}
                         </Link>
                     </h4>
@@ -76,7 +64,7 @@ export default class Card extends React.Component<ICardProps> {
                     }
 
                     <h5 className="forecast-card-protected-area-distance">
-                        {Math.round(taxon.ProtectedArea.DistanceKilometers * 0.621371)} miles {bearingFunc(taxon.ProtectedArea.Latitude, taxon.ProtectedArea.Longitude).s}
+                        {Math.round(taxon.ProtectedArea.DistanceKilometers * 0.621371)} miles {this.bearingToProtectedArea()}
                     </h5>
                   <ConfidenceScale prediction={taxon.Prediction} style={{
                      zIndex: 0,
@@ -92,20 +80,39 @@ export default class Card extends React.Component<ICardProps> {
     );
   }
 
+    @computed
+    protected mapPath = () => {
+        const coords = getGlobalModel('default', MLocationUserCoordinates);
+        const dateStore = getGlobalModel('default', MTime);
+        const viewStore = getGlobalModel('default', MView);
+        return RouterStore.FormMapPath({
+            coordStr: `@${coords.Latitude},${coords.Longitude},9z`,
+            date: dateStore.DateString,
+            nameUsageId: this.props.taxon.NameUsageID,
+            pointType: viewStore.PointType,
+        });
+    };
+
+    @computed
+    protected bearingToProtectedArea = () => {
+        const coordComps = getGlobalModel('default', MLocationUserComputations);
+        const bearingFunc = coordComps.BearingToFunc;
+        return bearingFunc(
+            this.props.taxon.ProtectedArea.Latitude,
+            this.props.taxon.ProtectedArea.Longitude).s
+    };
+
   protected selectTaxon = (e: React.MouseEvent<HTMLAnchorElement>) => {
-      const { taxaStore, viewStore} = this.props;
-      if (!taxaStore || !viewStore) {
-          return;
-      }
+      const viewStore = getGlobalModel('default', MView);
+      const taxaStore = getGlobalModel('default', MUserTaxa);
       viewStore.ShowTaxonCard();
       taxaStore.Select(this.props.taxon.NameUsageID);
-  }
+  };
 
     protected selectProtectedArea = (e: React.MouseEvent<HTMLAnchorElement>) => {
-        if (this.props.viewStore) {
-            this.props.viewStore.SetProtectedAreaToken(
+        const viewStore = getGlobalModel('default', MView);
+            viewStore.SetProtectedAreaToken(
                 this.props.taxon.ProtectedArea.TokenID || ''
             );
-        }
     }
 }
