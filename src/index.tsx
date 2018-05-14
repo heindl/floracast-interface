@@ -1,15 +1,16 @@
 /*! eslint-disable import/first */
 
 import { configure } from 'mobx';
+import {enableLogging} from 'mobx-logger';
 import * as React from 'react';
 import { asyncComponent } from 'react-async-component';
 import * as ReactDOM from 'react-dom';
 import * as ReactGA from 'react-ga';
-import { BrowserRouter, Route, Switch } from 'react-router-dom';
+import { Route, Router, Switch } from 'react-router-dom';
 import './index.css';
 import registerServiceWorker from './registerServiceWorker';
-
-import {enableLogging} from 'mobx-logger';
+import {getGlobalModel} from "./stores/globals";
+import {MRouter} from "./stores/router";
 
 enableLogging();
 
@@ -66,7 +67,7 @@ const AsyncForecast = asyncComponent({
 });
 
 ReactDOM.render(
-  <BrowserRouter>
+  <Router  history={getGlobalModel('default', MRouter).HistoryRef}>
     <div>
       <Route path="/" component={logPageView} />
       <Switch>
@@ -89,7 +90,7 @@ ReactDOM.render(
           {/*name="map-locator"*/}
         {/*/>*/}
         <Route
-          path="/map/:pointType(occurrences|predictions)?/:coordinates?/:date?/:nameUsageId?"
+          path="/map/:coordinates?/:date?/:nameUsageId?"
           component={AsyncMap}
           name="map"
           id="map-container"
@@ -102,7 +103,7 @@ ReactDOM.render(
         />
       </Switch>
     </div>
-  </BrowserRouter>,
+  </Router>,
   document.getElementById('root')
 );
 registerServiceWorker();

@@ -1,13 +1,14 @@
 /* tslint:disable:max-classes-per-file */
 import * as Leaflet from "leaflet";
-import { inject, observer } from 'mobx-react';
+import { observer } from 'mobx-react';
 import * as React from 'react';
 import * as ReactLeaflet from 'react-leaflet';
 import Icon from '../../iconography/Icon';
 import {Minus, Navigate, Plus} from '../../iconography/Icons';
-import { CoordinateStore } from '../../stores/coordinates';
-import { MMapPoints } from '../../stores/points';
-import {PointType, MView} from "../../stores/view";
+import {getGlobalModel} from "../../stores/globals";
+import MLocationMapCoordinates from "../../stores/location/map";
+import {MMapOccurrences, MMapPredictions} from '../../stores/points';
+import {MView, PointType} from "../../stores/view";
 // Copy css from https://unpkg.com/leaflet@1.3.1.css
 // Ensure that relative image links are replaced with prepended with https://unpkg.com/leaflet@1.3.1/dist/.
 import './leaflet@1.3.1.css';
@@ -15,27 +16,27 @@ import './PointMap.css';
 import PointMarker from './PointMarker';
 
 
-interface IPredictionFeatureGroupProps {
-    predictionPointStore?: MMapPoints;
-    namespace: string;
-}
-
-@inject('predictionPointStore')
 @observer
-class PredictionFeatureGroup extends React.Component<IPredictionFeatureGroupProps> {
+class PredictionFeatureGroup extends React.Component {
     public render() {
-        const {predictionPointStore} = this.props;
-        if (!predictionPointStore) {
+        const mapPoints = getGlobalModel('default', MMapPredictions).MapPoints;
+        const mView = getGlobalModel('default', MView);
+        const zoom = getGlobalModel('default', MLocationMapCoordinates).Zoom;
+
+        if (mView.PointType !== PointType.Predictions) {
             return null
         }
+
         return (
             <ReactLeaflet.FeatureGroup>
-                {predictionPointStore.MapPoints.map((point) => {
+                {mapPoints.map((point) => {
                     return (
                         <PointMarker
                             key={point.id}
                             point={point}
-                            namespace={this.props.namespace}
+                            isHovered={mView.HoveredMapDivIcon === point.id}
+                            tooltipSelected={mView.ProtectedAreaToken === point.id}
+                            zoom={zoom}
                         />
                     );
                 })}
@@ -44,22 +45,21 @@ class PredictionFeatureGroup extends React.Component<IPredictionFeatureGroupProp
     }
 }
 
-interface IOccurrenceFeatureGroupProps {
-    occurrencePointStore?: MMapPoints;
-    namespace: string;
-}
-
-@inject('occurrencePointStore')
 @observer
-class OccurrenceFeatureGroup extends React.Component<IOccurrenceFeatureGroupProps> {
+class OccurrenceFeatureGroup extends React.Component {
+
     public render() {
-        const {occurrencePointStore} = this.props;
-        if (!occurrencePointStore) {
+
+        const mView = getGlobalModel('default', MView);
+        const mapPoints = getGlobalModel('default', MMapOccurrences).MapPoints;
+
+        if (mView.PointType !== PointType.Occurrences) {
             return null
         }
+
         return (
             <ReactLeaflet.FeatureGroup>
-                {occurrencePointStore.MapPoints.map((point) => {
+                {mapPoints.map((point) => {
                     return (
                         <ReactLeaflet.CircleMarker
                             key={point.id}
@@ -76,24 +76,17 @@ class OccurrenceFeatureGroup extends React.Component<IOccurrenceFeatureGroupProp
     }
 }
 
-interface IPointMapProps {
-  coordinateStore?: CoordinateStore;
-  viewStore?: MView;
-  namespace: string;
-}
-
 interface IPointMapState {
   mapReady: boolean;
 }
 
-@inject('coordinateStore', 'viewStore')
 @observer
 export default class PointMap extends React.Component<
-  IPointMapProps,
+    {},
   IPointMapState
 > {
 
-  constructor(props: IPointMapProps) {
+  constructor(props: {}) {
     super(props);
     this.state = {
       mapReady: false,
@@ -101,27 +94,24 @@ export default class PointMap extends React.Component<
   }
 
   public render() {
-    const { coordinateStore, viewStore } = this.props;
 
-    if (!coordinateStore || !viewStore) {
-      return null;
-    }
+      const mCoords = getGlobalModel('namespace', MLocationMapCoordinates);
 
-    console.log("Creating Map", coordinateStore.Latitude, coordinateStore.Longitude, coordinateStore.Zoom)
+    console.log("Creating Map", mCoords.Latitude, mCoords.Longitude, mCoords.Zoom)
     return (
       <ReactLeaflet.Map
         whenReady={this.handleMapReady}
         onMoveend={this.handleMapMove}
         onZoomend={this.handleMapMove}
         zoomControl={false}
-        center={[coordinateStore.Latitude, coordinateStore.Longitude]}
+        center={[mCoords.Latitude, mCoords.Longitude]}
         id="point-map"
         style={{
           height: "100%", // Note that leaflet will break if this is not included.
           position: "relative", // Note that leaflet adds this.
           width: "100%",
         }}
-        zoom={coordinateStore.Zoom}
+        zoom={mCoords.Zoom}
       >
         <div id="point-map-zoom-control">
           <Icon
@@ -136,8 +126,8 @@ export default class PointMap extends React.Component<
           />
           <Icon
             icon={Minus}
-            color={coordinateStore.Zoom <= 6 ? "#eee" : "#696969"}
-            activeColor={coordinateStore.Zoom <= 6 ? "#eee" : "#000"}
+            color={mCoords.Zoom <= 6 ? "#eee" : "#696969"}
+            activeColor={mCoords.Zoom <= 6 ? "#eee" : "#000"}
             onClick={this.zoomOut}
           />
         </div>
@@ -148,32 +138,26 @@ export default class PointMap extends React.Component<
           }`}
           // attribution="&copy; <a href=http://osm.org/copyright>OpenStreetMap</a> contributors"
         />
-          {(this.state.mapReady && viewStore.PointType === PointType.Predictions) &&
-            <PredictionFeatureGroup namespace={this.props.namespace} />
+          {this.state.mapReady &&
+            <PredictionFeatureGroup />
           }
-          {(this.state.mapReady && viewStore.PointType === PointType.Occurrences) &&
-              <OccurrenceFeatureGroup namespace={this.props.namespace} />
+          {this.state.mapReady &&
+              <OccurrenceFeatureGroup />
           }
       </ReactLeaflet.Map>
     );
   }
 
     protected geolocate = () => {
-        if (this.props.coordinateStore) {
-            this.props.coordinateStore.Geolocate()
-        }
-    }
+        getGlobalModel('namespace', MLocationMapCoordinates).Geolocate()
+    };
 
   protected zoomIn = () => {
-      if (this.props.coordinateStore) {
-          this.props.coordinateStore.IncrementZoom(1)
-      }
+      getGlobalModel('namespace', MLocationMapCoordinates).IncrementZoom(1)
   }
 
     protected zoomOut = () => {
-        if (this.props.coordinateStore) {
-            this.props.coordinateStore.IncrementZoom(-1)
-        }
+        getGlobalModel('namespace', MLocationMapCoordinates).IncrementZoom(-1)
     }
 
   protected handleMapReady = () => {
@@ -181,13 +165,12 @@ export default class PointMap extends React.Component<
   };
 
   protected handleMapMove = (e: Leaflet.LeafletEvent) => {
-      if (this.props.coordinateStore) {
-          this.props.coordinateStore.SetPosition(
-              e.target.getCenter().lat,
-              e.target.getCenter().lng,
-              e.target.getZoom(),
-          )
-      }
+      const mCoords = getGlobalModel('namespace', MLocationMapCoordinates);
+      mCoords.SetCoordinates(
+          e.target.getCenter().lat,
+          e.target.getCenter().lng
+      );
+      mCoords.SetZoom(e.target.getCenter().zoom)
   }
 }
 

@@ -1,36 +1,34 @@
 /* tslint:disable:max-classes-per-file */
-import { inject, observer } from 'mobx-react';
+import { observer } from 'mobx-react';
 import * as React from 'react';
 import { Link } from 'react-router-dom';
 import Icon from '../../iconography/Icon';
 import { SeedOfLife } from '../../iconography/Icons';
-import { TaxaStore } from '../../stores/taxa';
-import { MMapTimeline } from '../../stores/timeline';
-import {InFocusField, PointType, MView} from '../../stores/view';
+import {getGlobalModel} from "../../stores/globals";
+import {MMapTaxa} from '../../stores/taxa';
+import {MMapOccurrenceTimeline, MMapPredictionTimeline} from '../../stores/timeline';
+import {InFocusField, MView, PointType} from '../../stores/view';
 import './Navigation.css';
 import DateSearchField from './search-fields/DateSearchField';
 import PointTypeSearchField from './search-fields/PointTypeSearchField';
 import TaxaSearchField from './search-fields/TaxaSearchField';
 import Tick from './TimelineTick';
 
-interface ITickMarkProps{
-    pointType: PointType;
-    timelineStore?: MMapTimeline;
-}
-
-@inject('timelineStore')
 @observer
-class TickMarks extends React.Component<ITickMarkProps> {
+class Timeline extends React.Component {
     public render() {
 
-        const {timelineStore} = this.props;
-
-        if (!timelineStore) {
+        const mView = getGlobalModel('default', MView);
+        if (!mView.TimelineIsVisible) {
             return null
         }
+
+        const tickMarks = mView.PointType === PointType.Predictions ?
+            getGlobalModel('default', MMapPredictionTimeline).TickMarks :
+            getGlobalModel('default', MMapOccurrenceTimeline).TickMarks;
         return (
             <div id="timeline">
-                {timelineStore.TickMarks.map((mark, i) => {
+                {tickMarks.map((mark, i) => {
                     return <Tick key={mark.moment.unix()} mark={mark} />;
                 })}
             </div>
@@ -38,19 +36,13 @@ class TickMarks extends React.Component<ITickMarkProps> {
     }
 }
 
-interface INavigationProps {
-  viewStore?: MView;
-  taxaStore?: TaxaStore;
-}
-
-@inject('viewStore', 'taxaStore')
 @observer
-export default class Navigation extends React.Component<INavigationProps> {
+export default class Navigation extends React.Component<{}> {
   public PointTypeSearchRef: HTMLDivElement;
   public TaxaSearchRef: HTMLDivElement;
   public DateSearchRef: HTMLDivElement;
 
-  constructor(props: INavigationProps) {
+  constructor(props: {}) {
     super(props);
     this.examineClickEvent = this.examineClickEvent.bind(this);
   }
@@ -64,16 +56,13 @@ export default class Navigation extends React.Component<INavigationProps> {
   }
 
   public render() {
-    const { viewStore, taxaStore } = this.props;
-
-    if (!viewStore || !taxaStore) {
-      return null;
-    }
 
     // const taxaFuncWord =
     //   viewStore.PointType === PointType.Occurrences ? 'of' : 'for';
     // const dateFuncWord =
     //   viewStore.PointType === PointType.Occurrences ? 'in' : 'on';
+
+      const selectedTaxon = getGlobalModel('namespace', MMapTaxa).Selected;
 
     return (
       <div id="navigation">
@@ -94,18 +83,15 @@ export default class Navigation extends React.Component<INavigationProps> {
 
           <DateSearchField setRef={this.setDateRef} />
 
-          {taxaStore.Selected &&
-            taxaStore.Selected.CommonName && (
-              <h6 className="search-field-function-word">|</h6>
-            )}
+            {(selectedTaxon && selectedTaxon.CommonName) &&
+            <h6 className="search-field-function-word">|</h6>
+            }
 
           <TaxaSearchField setRef={this.setTaxaSearchRef} />
 
         </div>
 
-        {viewStore.TimelineIsVisible &&
-          <TickMarks pointType={viewStore.PointType} />
-        }
+          <Timeline />
       </div>
     );
   }
@@ -123,10 +109,6 @@ export default class Navigation extends React.Component<INavigationProps> {
     };
 
     protected examineClickEvent = (e: Event) => {
-        const { viewStore } = this.props;
-        if (!viewStore) {
-            return;
-        }
 
         let inside: boolean = false;
 
@@ -144,7 +126,7 @@ export default class Navigation extends React.Component<INavigationProps> {
         }
 
         if (!inside) {
-            viewStore.SetInFocusField(InFocusField.FieldNone);
+            getGlobalModel('default', MView).SetInFocusField(InFocusField.FieldNone);
         }
     };
 }

@@ -1,38 +1,12 @@
-import { Provider } from 'mobx-react';
 import * as React from 'react';
 import {Link} from "react-router-dom";
 import RandomGeoClusters from "../../iconography/RandomGeoClusters";
 import Wreath from "../../iconography/Wreath";
-import {
-  ContactFormStore,
-  getContactFormStore,
-} from '../../stores/contact-form';
-import { CoordinateStore, getCoordinateStore } from '../../stores/coordinates';
-import { MTime, getDateStore } from '../../stores/date';
-import { MErrors, getErrorStore } from '../../stores/errors';
 import BetaForm from './BetaForm';
 import './Home.css';
 import Masthead from './Masthead';
 
 export default class Home extends React.Component {
-
-  public stores: {
-    coordinateStore: CoordinateStore;
-    dateStore: MTime;
-    errorStore: MErrorStore;
-    contactFormStore: ContactFormStore;
-  };
-
-  constructor(props: object) {
-    super(props);
-
-    this.stores = {
-      contactFormStore: getContactFormStore('default'),
-      coordinateStore: getCoordinateStore('default'),
-      dateStore: getDateStore('default'),
-      errorStore: getErrorStore('default'),
-    };
-  }
 
   public componentDidMount() {
     window.scrollTo(0, 0);
@@ -41,7 +15,6 @@ export default class Home extends React.Component {
   public render() {
 
     return (
-      <Provider {...this.stores}>
           <div>
           <Masthead />
         <div id="home-container">
@@ -115,7 +88,6 @@ export default class Home extends React.Component {
           </div>
         </div>
           </div>
-      </Provider>
     );
   }
 }

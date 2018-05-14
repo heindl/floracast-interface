@@ -60,26 +60,6 @@ export default class MLocationMapCoordinates extends MLocationUserCoordinates{
         this.Zoom = amount
     }
 
-    // public FromPath(loc: string) {
-    //     const commaMatches = loc.match(/,/gi);
-    //     if (
-    //         !commaMatches ||
-    //         commaMatches.length === 0 ||
-    //         !loc.startsWith('@') ||
-    //         !loc.endsWith('z')
-    //     ) {
-    //         throw Error(
-    //             `Could not construct location with invalid path parameter [${loc}]`
-    //         );
-    //     }
-    //     const divisions: string[] = loc
-    //         .replace('@', '')
-    //         .replace('z', '')
-    //         .split(',');
-    //     this.SetCoordinates(parseFloat(divisions[0]), parseFloat(divisions[1]));
-    //     this.SetZoom(parseInt(divisions[2], 10));
-    // }
-
 
     // TODO:
     // Develop an efficient way of fetching new records when the view pans.

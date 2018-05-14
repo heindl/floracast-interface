@@ -1,36 +1,31 @@
 // import { History } from 'history';
-/* tslint:disable:no-var-requires no-any no-submodule-imports*/
-import { inject, observer } from 'mobx-react';
+/* tslint:disable:no-var-requires*/
+import { observer } from 'mobx-react';
 const Vibrant = require('node-vibrant');
 import * as classnames from 'classnames';
 import * as _ from 'lodash';
+import {computed} from "mobx";
 import {Palette} from "node-vibrant/lib/color";
 import * as React from 'react';
 import {
   default as PlacesAutocomplete,
   Suggestion,
 } from 'react-places-autocomplete';
-import { RouteComponentProps, withRouter } from 'react-router';
 import Icon from "../../iconography/Icon";
 import {Search} from "../../iconography/Icons";
-import { CoordinateStore } from '../../stores/coordinates';
-import { MErrors } from '../../stores/errors';
-import { RouterStore } from '../../stores/router';
-import { PointType } from '../../stores/view';
+import MErrors from "../../stores/errors";
+import {getGlobalModel} from "../../stores/globals";
+import MLocationUserCoordinates from "../../stores/location/coordinate";
+import MLocationPlace from "../../stores/location/place";
+import {MRouter} from "../../stores/router";
 import Header from '../general/Header';
 import './Masthead.css';
 
-interface IMastheadProps {
-  coordinateStore?: CoordinateStore;
-  errorStore?: MErrorStore;
-}
 
 function importRandomImage(): string {
     const i = Math.floor(Math.random() * 14);
     return require(`../../images/masthead/${i}.jpg`);
 }
-
-type Props = IMastheadProps & RouteComponentProps<{}>;
 
 interface IMastheadState {
   address?: string;
@@ -40,11 +35,10 @@ interface IMastheadState {
   buttonHover: boolean;
 }
 
-@inject('coordinateStore', 'errorStore')
 @observer
-class Masthead extends React.Component<Props, IMastheadState> {
-  constructor(props: Props) {
-    super(props);
+class Masthead extends React.Component<{}, IMastheadState> {
+  constructor(props: {}) {
+      super(props);
     this.state = {
         backgroundImage: importRandomImage(),
         buttonHover: false,
@@ -54,33 +48,10 @@ class Masthead extends React.Component<Props, IMastheadState> {
   }
 
   public componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    if (this.props.errorStore) {
-      this.props.errorStore.Report(error);
-    }
+      getGlobalModel('default', MErrors).Report(error);
   }
 
   public render() {
-    const AutocompleteItem = (s: Suggestion) => {
-      return (
-        <div>
-          <strong>{s.formattedSuggestion.mainText}</strong>
-          {', '}
-          <small>
-            {s.formattedSuggestion.secondaryText.replace(', United States', '')}
-          </small>
-        </div>
-      );
-    };
-
-    const { errorStore, coordinateStore } = this.props;
-    if (!errorStore || !coordinateStore) {
-      return null;
-    }
-
-    let inputText = this.state.address || '';
-    if (inputText === '' && coordinateStore.City && coordinateStore.State) {
-        inputText = `${coordinateStore.City}, ${coordinateStore.State}`
-    }
 
     return (
       <div id="masthead-container">
@@ -95,54 +66,52 @@ class Masthead extends React.Component<Props, IMastheadState> {
               ? 'What will you find outside?'
               : 'Where are you?'}
           </h1>
-          {coordinateStore.IsReady && (
-            <div className="masthead-form">
-              <PlacesAutocomplete
-                renderSuggestion={AutocompleteItem}
-                // root, input, autocompleteContainer, autocompleteItem, autocompleteItemActive, googleLogoContainer, googleLogoImage
-                classNames={{
-                  autocompleteContainer:
-                    'masthead-autocomplete-container narrow',
-                  autocompleteItem: 'masthead-autocomplete-item narrow',
-                  autocompleteItemActive:
-                    'masthead-autocomplete-item-active narrow',
-                  input: `masthead-form-control`,
-                  root: 'masthead-form-group',
-                }}
-                inputProps={{
-                  onChange: this.handleInputChange,
-                  placeholder: 'City, State',
-                  type: 'search',
-                  value: inputText,
-                }}
-                onError={this.handleError}
-                onSelect={this.handleSelect}
-                onEnterKeyDown={this.handleSelect}
-                options={{
-                  componentRestrictions: { country: ['us'] },
-                  types: ['(cities)'],
-                }}
-              />
-              <button
-                  className="masthead-form-button"
-                  style={{
-                      backgroundColor: this.state.buttonHover ? this.state.mastScheme : "transparent",
-                      border: this.state.buttonHover ?  "2px solid transparent" : `2px solid ${this.state.mastScheme}`,
-                  }}
-                onClick={this.handleButtonSelect}
-                  onMouseEnter={this.toggleButtonHover}
-                  onMouseLeave={this.toggleButtonHover}
-                type="submit"
-              >
-                  <Icon
-                      icon={Search}
-                      selected={this.state.buttonHover}
-                      style={{opacity: this.state.buttonHover ? 0.7 : 1}}
-                      activeColor={this.state.logoScheme}
-                      color={this.state.mastScheme} />
-              </button>
-            </div>
-          )}
+        <div className="masthead-form">
+          <PlacesAutocomplete
+            renderSuggestion={this.autoCompleteItem}
+            // root, input, autocompleteContainer, autocompleteItem, autocompleteItemActive, googleLogoContainer, googleLogoImage
+            classNames={{
+              autocompleteContainer:
+                'masthead-autocomplete-container narrow',
+              autocompleteItem: 'masthead-autocomplete-item narrow',
+              autocompleteItemActive:
+                'masthead-autocomplete-item-active narrow',
+              input: `masthead-form-control`,
+              root: 'masthead-form-group',
+            }}
+            inputProps={{
+              onChange: this.handleInputChange,
+              placeholder: 'City, State',
+              type: 'search',
+              value: this.inputText(),
+            }}
+            onError={this.handleError}
+            onSelect={this.handleSelect}
+            onEnterKeyDown={this.handleSelect}
+            options={{
+              componentRestrictions: { country: ['us'] },
+              types: ['(cities)'],
+            }}
+          />
+          <button
+              className="masthead-form-button"
+              style={{
+                  backgroundColor: this.state.buttonHover ? this.state.mastScheme : "transparent",
+                  border: this.state.buttonHover ?  "2px solid transparent" : `2px solid ${this.state.mastScheme}`,
+              }}
+            onClick={this.handleButtonSelect}
+              onMouseEnter={this.toggleButtonHover}
+              onMouseLeave={this.toggleButtonHover}
+            type="submit"
+          >
+              <Icon
+                  icon={Search}
+                  selected={this.state.buttonHover}
+                  style={{opacity: this.state.buttonHover ? 0.7 : 1}}
+                  activeColor={this.state.logoScheme}
+                  color={this.state.mastScheme} />
+          </button>
+        </div>
         </div>
         <svg
           className="masthead-circle"
@@ -155,6 +124,18 @@ class Masthead extends React.Component<Props, IMastheadState> {
     );
   }
 
+  protected autoCompleteItem = (s: Suggestion) => {
+      return (
+          <div>
+              <strong>{s.formattedSuggestion.mainText}</strong>
+              {', '}
+              <small>
+                  {s.formattedSuggestion.secondaryText.replace(', United States', '')}
+              </small>
+          </div>
+      );
+  };
+
 
     protected redirectIndex = () => {
         return window.location.href.indexOf('redirect=');
@@ -166,19 +147,18 @@ class Masthead extends React.Component<Props, IMastheadState> {
         })
     };
 
-    protected getInputText = (): string => {
+
+    @computed
+    protected inputText = (): string => {
+
+        const mPlace = getGlobalModel('default', MLocationPlace);
 
         if (this.state.address && this.state.address.trim() !== '') {
             return this.state.address
         }
 
-        const { coordinateStore } = this.props;
-        if (!coordinateStore) {
-            return '';
-        }
-
-        if (coordinateStore.City && coordinateStore.State) {
-            return `${coordinateStore.City}, ${coordinateStore.State}`
+        if (mPlace.Locality && mPlace.AdminAreaLong) {
+            return `${mPlace.Locality}, ${mPlace.AdminAreaLong}`
         }
         return ''
     };
@@ -188,9 +168,7 @@ class Masthead extends React.Component<Props, IMastheadState> {
     };
 
     protected handleError = (status: string, clearSuggestion: () => void) => {
-        if (this.props.errorStore) {
-            this.props.errorStore.Report(Error(status))
-        }
+        getGlobalModel('default', MErrors).Report(Error(status));
         clearSuggestion();
     }
 
@@ -235,17 +213,13 @@ class Masthead extends React.Component<Props, IMastheadState> {
     };
 
     protected handleButtonSelect = (e: React.MouseEvent<HTMLButtonElement>) => {
+        this.handleSelect(this.inputText())
+    };
 
+    protected handleSelect = (address?: string, placeId?: string) => {
 
-        this.handleSelect(this.getInputText())
-    }
-
-
-    protected handleSelect = (address?: string, placeID?: string) => {
-        const { coordinateStore } = this.props;
-        if (!coordinateStore) {
-            return;
-        }
+        const mCoords = getGlobalModel('default', MLocationUserCoordinates);
+        const mPlace = getGlobalModel('default', MLocationPlace);
 
         if (!address || address.trim() === '') {
             return
@@ -258,31 +232,30 @@ class Masthead extends React.Component<Props, IMastheadState> {
                 1
             ) === 'f';
 
-        const [city, state] = address.split(',');
-
-        if (!city || !state) {
-            return;
-        }
-
-        const formattedState = state.trim().toLowerCase().replace(" ", "+");
-
         if (hasForecastRedirect) {
-            this.props.history.push(
-                RouterStore.FormForecastPath({ city, state: formattedState })
-            );
+            const [city, state] = address.split(',');
+            if (!city || !state) {
+                return;
+            }
+            getGlobalModel('default', MRouter).NavigateTo({
+                params: {
+                    adminAreaLong: state,
+                    locality: city,
+                },
+                section: 'forecast',
+            });
         } else {
-            coordinateStore.SetCity(city);
-            coordinateStore.SetState(state.trim());
-            coordinateStore.GeocodeAddress();
-            this.props.history.push(
-                RouterStore.FormMapPath({
-                    coordStr: coordinateStore.Formatted,
-                    pointType: PointType.Predictions,
-                })
-            );
+            mPlace.ReverseGeocode({address, placeId});
+            getGlobalModel('default', MRouter).NavigateTo({
+                params: {
+                    lat: mCoords.Latitude,
+                    lng: mCoords.Longitude,
+                },
+                section: 'map',
+            });
         }
     };
 
 }
 
-export default withRouter<Props>(Masthead);
+export default Masthead;

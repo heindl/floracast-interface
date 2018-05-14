@@ -28,9 +28,6 @@ describe('location store suite', () => {
                 MLocationUserCoordinates
             );
         });
-        afterEach(() => {
-            clearGlobalStores();
-        });
 
         it('instantiates from globals', () => {
             expect(CS.Radius).toEqual(DefaultRadius)
@@ -174,8 +171,7 @@ describe('location store suite', () => {
             );
             CCS = getGlobalModel(
                 namespace,
-                MLocationUserComputations,
-                {coordinateStoreType: 'user'}
+                MLocationUserComputations
             );
         });
         afterEach(() => {

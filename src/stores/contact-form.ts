@@ -12,7 +12,7 @@ export enum ContactFormStateCode {
   Failed,
 }
 
-export class ContactFormStore {
+export class MContactForm {
 
   @observable public SavedEmails: string[] = [];
   @observable

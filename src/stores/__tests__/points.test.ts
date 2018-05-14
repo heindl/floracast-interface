@@ -40,16 +40,13 @@ describe('point model suite', () => {
                 mTime.FromFormattedString('20170908');
                 mTaxa.Select('ugkG3de');
             });
-            afterEach(() => {
-                clearGlobalStores();
-            });
 
-            it.skip('instatiates and fetches csv', async () => {
+            it('instatiates and fetches csv', async () => {
                 await when(() => mPredictions.IsLoading === false);
                 expect(mPredictions.MapPoints.length).toEqual(82);
             });
 
-                it.skip('updates points on location changes', async () => {
+                it('updates points on location changes', async () => {
                     await when(() => mPredictions.IsLoading === false);
                     expect(mPredictions.MapPoints.length).toEqual(82);
                     mCoords.SetZoom(7);

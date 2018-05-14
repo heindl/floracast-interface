@@ -1,14 +1,12 @@
-import { Provider } from 'mobx-react';
+import * as _ from 'lodash';
 import * as React from 'react';
 import { RouteComponentProps, withRouter } from 'react-router';
-import { CoordinateStore, getCoordinateStore } from '../../stores/coordinates';
-import { MTime, getDateStore } from '../../stores/date';
-import { MErrors, getErrorStore } from '../../stores/errors';
-import { getPointStore, MMapPoints } from '../../stores/points';
-import { getRouterStore, RouterStore } from '../../stores/router';
-import { getTaxaStore, TaxaStore } from '../../stores/taxa';
-import { getTimelineStore, MMapTimeline } from '../../stores/timeline';
-import {getViewStore, PointType, MView} from '../../stores/view';
+import {MTime} from "../../stores/date";
+import MErrors from "../../stores/errors";
+import {getGlobalModel} from "../../stores/globals";
+import MLocationMapCoordinates from "../../stores/location/map";
+import {parseCoordinates} from "../../stores/router";
+import {MMapTaxa} from "../../stores/taxa";
 import Navigation from './Navigation';
 import PointMap from './PointMap';
 import TaxonCard from "./TaxonCard";
@@ -42,55 +40,27 @@ type Props = IndexProps & RouteComponentProps<{}>;
 
 class Index extends React.Component<Props> {
 
-  public stores: {
-    coordinateStore: CoordinateStore;
-    dateStore: MTime;
-    errorStore: MErrorStore;
-    occurrencePointStore: MMapPoints;
-      predictionPointStore: MMapPoints;
-    taxaStore: TaxaStore;
-    timelineStore: MMapTimeline;
-    viewStore: MView;
-  };
-
-    protected routerStore: RouterStore;
-
   constructor(props: Props) {
     super(props);
     if (!props.history) {
       throw Error('History Props not Found');
     }
 
-    this.stores = {
-      coordinateStore: getCoordinateStore('default'),
-      dateStore: getDateStore('default'),
-      errorStore: getErrorStore('default'),
-        occurrencePointStore: getPointStore('default', PointType.Occurrences),
-        predictionPointStore: getPointStore('default', PointType.Predictions),
-      taxaStore: getTaxaStore('default'),
-      timelineStore: getTimelineStore('default'),
-      viewStore: getViewStore('default'),
-    };
-
     // Do before router store initialization in order to set to initial path.
-    this.updateMatchParams(props.match.params);
-
-    // Do after capturing initial props.
-    this.routerStore = getRouterStore(props.history, 'default');
+    updateMatchParams(props.match.params);
   }
 
 
   public componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    this.stores.errorStore.Report(error);
+      getGlobalModel('default', MErrors).Report(error);
   }
 
   public componentWillReceiveProps(nextProps: Props) {
-    this.updateMatchParams(nextProps.match.params);
+    updateMatchParams(nextProps.match.params);
   }
 
   public render() {
     return (
-      <Provider {...this.stores}>
         <div id="map-component" style={{
           height: "100vh",
             position: "fixed", // Note: necessary for leaflet map to function.
@@ -100,27 +70,33 @@ class Index extends React.Component<Props> {
           <TaxonCard />
           <PointMap namespace={'default'} />
         </div>
-      </Provider>
     );
   }
 
+}
 
-    protected updateMatchParams(params: IPathMatchParams) {
-        if (params.coordinates) {
-            this.stores.coordinateStore.FromPath(params.coordinates);
-        }
+function updateMatchParams(params: IPathMatchParams) {
 
-        if (params.date) {
-            this.stores.dateStore.FromFormattedString(params.date);
-        }
+    const sCoords = getGlobalModel('default', MLocationMapCoordinates);
 
-        if (params.pointType) {
-            this.stores.viewStore.SetPointTypeFromString(params.pointType);
-        }
+    // Eventually set the default to the most ecologically significant area in the country
+    const coords = _.assign({
+        lat: 37.9420743,
+        lng: -107.9058009,
+        zoom: 6,
+    }, parseCoordinates(params.coordinates || ''));
 
-        if (params.nameUsageId) {
-            this.stores.taxaStore.Select(params.nameUsageId);
-        }
+    sCoords.SetCoordinates(coords.lat, coords.lng);
+    sCoords.SetZoom(coords.zoom);
+
+    if (params.date) {
+        const sTime = getGlobalModel('default', MTime);
+        sTime.FromFormattedString(params.date)
+    }
+
+    if (params.nameUsageId) {
+        const mTaxa = getGlobalModel('default', MMapTaxa);
+        mTaxa.Select(params.nameUsageId);
     }
 }
 

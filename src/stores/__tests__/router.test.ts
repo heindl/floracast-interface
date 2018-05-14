@@ -4,69 +4,91 @@
 
 import * as History from 'history';
 import {} from 'jest';
-import {when} from "mobx";
 import * as uuid from 'uuid';
-import sleep from '../../utils/sleep.mock';
-import { getCoordinateStore } from '../coordinates';
-import { getDateStore } from '../date';
-import { getRouterStore } from '../router';
-import { getViewStore, PointType } from '../view';
+import {getGlobalModel} from "../globals";
+import {MRouter} from "../router";
+import sleep from "../../utils/sleep.mock";
 
-it('instantiates, parses and updates router', async () => {
-  const namespace = uuid.v4().substr(0, 5);
+describe('router', () => {
 
-  const historyRef = History.createBrowserHistory({
-    basename: '',
-  });
-  historyRef.push('map');
-  const coordStore = getCoordinateStore(namespace);
-  const viewStore = getViewStore(namespace);
-  const dateStore = getDateStore(namespace);
-  const routerStore = getRouterStore(historyRef, namespace);
+      let router: MRouter;
+      let historyRef: History.History;
 
-  viewStore.SetPointType(PointType.Occurrences);
+      beforeEach(() => {
+          router = getGlobalModel(
+              uuid.v4().substr(0, 5),
+              MRouter,
+          );
+          historyRef = router.HistoryRef;
+      });
 
-  await when(() => viewStore.PointType === PointType.Occurrences);
+    it('parses map path', () => {
+        historyRef.push('/map/@35.538851,-82.705490,9z/20180316/ugkG3de');
+        expect(router.ParseCurrentPath()).toEqual({
+            params: {
+                date: '20180316',
+                lat: 35.538851,
+                lng: -82.705490,
+                nameUsageId: 'ugkG3de',
+                zoom: 9,
+            },
+            section: 'map',
+        });
+    });
 
-  expect(coordStore.Latitude).toEqual(35.538851);
-  expect(coordStore.Longitude).toEqual(-82.7054901);
-  expect(dateStore.DateString).toEqual('20180316');
+    it('parses forecast path', () => {
+        historyRef.push('/forecast/north+carolina/asheville/20180316');
+        expect(router.ParseCurrentPath()).toEqual({
+            params: {
+                adminAreaLong: 'north carolina',
+                date: '20180316',
+                locality: 'asheville',
+            },
+            section: 'forecast',
+        });
+    });
 
-  expect(historyRef.location.pathname).toEqual(
-    '/map/occurrences/@35.538851,-82.705490,9z/20180316/'
-  );
+      it('navigates to map', async () => {
+         router.NavigateTo({
+             params: {
+                 date: '20180316',
+               lat: 35.538851,
+                 lng: -82.705491,
+             },
+             section: 'map',
+         });
+          expect(historyRef.location.pathname).toEqual(
+              '/map/@35.538851,-82.705491,9z/20180316/'
+          );
+      });
 
-  coordStore.SetPosition(33.619953, -84.389027, 9);
+      it('navigates to forecast', () => {
+          router.NavigateTo({
+              params: {
+                  adminAreaLong: 'North Carolina',
+                  date: '20180316',
+                  locality: 'Asheville',
+              },
+              section: 'forecast',
+          });
+          expect(historyRef.location.pathname).toEqual(
+              '/forecast/north+carolina/asheville/20180316'
+          );
+      });
 
-  // await when(() => historyRef.location.pathname === '/map/occurrences/@33.6199531,-84.3890274,9z/20180316/')
+    it('handles updates', () => {
+        historyRef.push('/map/@35.538851,-82.705491,9z/20180316/');
+        router.NavigateTo({
+            params: {
+                date: '20180310',
+                lat: 35.538851,
+                lng: -82.705491,
+            },
+            section: 'map',
+        });
+        expect(historyRef.location.pathname).toEqual(
+            '/map/@35.538851,-82.705491,9z/20180310/'
+        );
+    })
 
-  await sleep(250);
-
-  expect(historyRef.location.pathname).toEqual(
-    '/map/occurrences/@33.619953,-84.389027,9z/20180316/'
-  );
-
-  coordStore.SetZoom(10);
-
-  await sleep(250);
-
-  expect(historyRef.location.pathname).toEqual(
-    '/map/occurrences/@33.619953,-84.389027,10z/20180316/'
-  );
-
-  dateStore.FromFormattedString('20180320');
-
-  await sleep(250);
-
-  expect(historyRef.location.pathname).toEqual(
-    '/map/occurrences/@33.619953,-84.389027,10z/20180320/'
-  );
-
-  viewStore.SetPointType(PointType.Predictions);
-
-  await sleep(250);
-
-  expect(historyRef.location.pathname).toEqual(
-    '/map/predictions/@33.619953,-84.389027,10z/20180320/'
-  );
 });

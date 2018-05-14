@@ -1,13 +1,14 @@
 import * as classNames from 'classnames';
-import { inject, observer } from 'mobx-react';
+import { observer } from 'mobx-react';
 import * as React from 'react';
 import { Link } from 'react-router-dom';
 import Icon from '../../iconography/Icon';
 import { Loading, PaperPlane } from '../../iconography/Icons';
 import {
   ContactFormStateCode,
-  ContactFormStore,
+  MContactForm,
 } from '../../stores/contact-form';
+import {getGlobalModel} from "../../stores/globals";
 import './BetaForm.css';
 
 const headerTexts: Map<ContactFormStateCode, string> = new Map<
@@ -39,33 +40,25 @@ const messageTexts: Map<ContactFormStateCode, string> = new Map<
   ],
 ]);
 
-interface IBetaFormProps {
-  contactFormStore?: ContactFormStore;
-}
 
 interface IBetaFormState {
   emailValue: string;
 }
 
-@inject('contactFormStore')
 @observer
 export default class BetaForm extends React.Component<
-  IBetaFormProps,
+    {},
   IBetaFormState
 > {
-  constructor(props: IBetaFormProps) {
+  constructor(props: any) {
     super(props);
     this.state = { emailValue: '' };
   }
 
   public render() {
-    const { contactFormStore } = this.props;
+    const mContactForm = getGlobalModel('default', MContactForm);
 
-    if (!contactFormStore) {
-      return null;
-    }
-
-    if (contactFormStore.StateCode === ContactFormStateCode.Processing) {
+    if (mContactForm.StateCode === ContactFormStateCode.Processing) {
       return (
         <div id="beta-form-container">
           <div className="beta-form-content">
@@ -78,16 +71,16 @@ export default class BetaForm extends React.Component<
         <div id="beta-form-container">
           <div className="beta-form-content">
             <h2 className="narrow heavy">
-              {headerTexts.get(contactFormStore.StateCode)}
+              {headerTexts.get(mContactForm.StateCode)}
             </h2>
             <h4 className="content-intro">
-              {messageTexts.get(contactFormStore.StateCode)}
+              {messageTexts.get(mContactForm.StateCode)}
             </h4>
             <form
               className={classNames({
                 'beta-form-input': true,
                 hidden:
-                  contactFormStore.StateCode === ContactFormStateCode.Complete,
+                mContactForm.StateCode === ContactFormStateCode.Complete,
               })}
               onSubmit={this.saveEmail}
             >
@@ -131,9 +124,7 @@ export default class BetaForm extends React.Component<
 
     protected saveEmail = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        if (this.props.contactFormStore) {
-            this.props.contactFormStore.SaveEmail(this.state.emailValue)
-        }
+        getGlobalModel('default', MContactForm).SaveEmail(this.state.emailValue)
     }
 
 }

@@ -1,6 +1,7 @@
 /* tslint:disable:no-console */
 // import { ErrorReporting } from '@google-cloud/error-reporting';
 import { action, observable } from 'mobx';
+import {ParseError} from "papaparse";
 // import { warn } from 'winston';
 
 export default class MErrors {
@@ -18,7 +19,7 @@ export default class MErrors {
 
   @action
   public Report = (
-    error: Error | PositionError,
+    error: Error | PositionError | ParseError,
     params?: {},
     message?: string
   ) => {

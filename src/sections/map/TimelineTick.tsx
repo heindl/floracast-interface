@@ -1,8 +1,9 @@
 // import TimelineTickPopper from './Poppers/TimelineTickPopper';
 import * as classNames from 'classnames';
-import { inject, observer } from 'mobx-react';
+import { observer } from 'mobx-react';
 import * as React from 'react';
-import { MTime } from '../../stores/date';
+import {MTime} from "../../stores/date";
+import {getGlobalModel} from "../../stores/globals";
 import { ITickMark } from '../../stores/timeline';
 import './TimelineTick.css';
 
@@ -11,14 +12,12 @@ const minCircleRadius = 20;
 
 interface ITickProps {
   mark: ITickMark;
-  dateStore?: MTime;
 }
 
 interface ITickState {
   hover: boolean;
 }
 
-@inject('dateStore')
 @observer
 export default class TimelineTick extends React.Component<
   ITickProps,
@@ -46,11 +45,7 @@ export default class TimelineTick extends React.Component<
   // };
 
   public render() {
-    const { mark, dateStore } = this.props;
-
-    if (!dateStore) {
-      return null;
-    }
+    const { mark } = this.props;
 
     const isBeginningOfMonth = mark.moment.date() <= 7;
     // const isBeginningOfYear = mark.moment.month() === 0 && isBeginningOfMonth;
@@ -148,10 +143,9 @@ export default class TimelineTick extends React.Component<
     };
 
     protected setDate = () => {
-        if (this.props.dateStore) {
-            const date = this.props.mark.moment.format('YYYYMMDD');
-            this.props.dateStore.FromFormattedString(date);
-        }
+          getGlobalModel('default', MTime).FromFormattedString(
+              this.props.mark.moment.format('YYYYMMDD')
+          );
     };
 
 }

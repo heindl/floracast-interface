@@ -1,23 +1,22 @@
 import * as classnames from 'classnames';
-import { inject, observer } from 'mobx-react';
+import { observer } from 'mobx-react';
 import * as React from 'react';
 import { MTime } from '../../../stores/date';
-import { InFocusField, PointType, MView } from '../../../stores/view';
+import {getGlobalModel} from "../../../stores/globals";
+import { InFocusField, MView, PointType } from '../../../stores/view';
 
 interface IDateFieldProps {
-  dateStore?: MTime;
-  viewStore?: MView;
   setRef: (ref: HTMLDivElement) => void;
 }
 
-@inject('viewStore', 'dateStore')
 @observer
 export default class DateSearchField extends React.Component<IDateFieldProps> {
   public render() {
-    const { viewStore, dateStore } = this.props;
-    if (!viewStore || !dateStore) {
-      return null;
-    }
+
+      const pointType = getGlobalModel('default', MView).PointType;
+      const mTime = getGlobalModel('default', MTime);
+      const formattedDate = pointType === PointType.Predictions ? mTime.Formatted : mTime.FormattedMonth;
+
     return (
       <div
         id="timeline-date-field"
@@ -32,9 +31,7 @@ export default class DateSearchField extends React.Component<IDateFieldProps> {
         <div className="search-field-element">
             <div className="search-field-element-content">
           <h4>
-            {viewStore.PointType === PointType.Predictions
-              ? dateStore.Formatted
-              : dateStore.FormattedMonth}
+            {formattedDate}
           </h4>
             </div>
         </div>
@@ -43,9 +40,8 @@ export default class DateSearchField extends React.Component<IDateFieldProps> {
   }
 
   protected toggleVisibility = () => {
-      if (this.props.viewStore) {
-          this.props.viewStore.ToggleTimelineVisibility();
-          this.props.viewStore.SetInFocusField(InFocusField.FieldNone);
-      }
+      const mView = getGlobalModel('default', MView);
+      mView.ToggleTimelineVisibility();
+      mView.SetInFocusField(InFocusField.FieldNone);
   }
 }

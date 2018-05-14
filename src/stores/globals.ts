@@ -6,12 +6,12 @@ interface INamespace{
     [className: string]: any
 }
 
-interface IClassConstructable {
+interface IClassConstructable<T> {
     name: string;
-    new(namespace: string): any;
+    new(namespace: string): T;
 }
 
-export function getGlobalModel(namespace: string, c: IClassConstructable) {
+export function getGlobalModel<T>(namespace: string, c: IClassConstructable<T>): T {
     if (namespace.trim() === '') {
         throw Error(`Invalid Namespace provided to get global namespace`);
     }

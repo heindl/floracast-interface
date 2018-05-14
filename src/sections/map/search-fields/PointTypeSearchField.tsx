@@ -1,16 +1,14 @@
 import * as classnames from 'classnames';
-import { inject, observer } from 'mobx-react';
+import {computed} from "mobx";
+import { observer } from 'mobx-react';
 import * as React from 'react';
-import { MErrors } from '../../../stores/errors';
-import { InFocusField, PointType, MView } from '../../../stores/view';
+import {getGlobalModel} from "../../../stores/globals";
+import {InFocusField, MView, PointType} from '../../../stores/view';
 
 interface IViewStoreProps {
-  viewStore?: MView;
-  errorStore?: MErrorStore;
   setRef: (ref: HTMLDivElement) => void;
 }
 
-@inject('viewStore', 'errorStore')
 @observer
 export default class PointTypeSearchField extends React.Component<
   IViewStoreProps
@@ -25,15 +23,10 @@ export default class PointTypeSearchField extends React.Component<
   }
 
   public render() {
-    const { viewStore } = this.props;
-    if (!viewStore) {
-      return null;
-    }
-    const isInFocus = viewStore.InFocusField === InFocusField.FieldPointType;
-    const deselectedPointType =
-      viewStore.PointType === PointType.Occurrences
-        ? PointType.Predictions
-        : PointType.Occurrences;
+
+    const isInFocus = this.isInFocus();
+    const deselectedPointType = this.deselectedValue();
+    const pointType = getGlobalModel('default', MView).PointType;
 
     return (
       <div
@@ -50,9 +43,9 @@ export default class PointTypeSearchField extends React.Component<
           onClick={this.toggleVisibility}
         >
             <div className="search-field-element-content">
-          <h4>{viewStore.PointType}</h4>
+          <h4>{pointType}</h4>
           <h5 className="search-field-highlight">
-            {this.subtext[viewStore.PointType]}
+            {this.subtext[pointType]}
           </h5>
             </div>
         </div>
@@ -73,29 +66,29 @@ export default class PointTypeSearchField extends React.Component<
     );
   }
 
+  @computed
     protected deselectedValue = () => {
-        if (!this.props.viewStore || this.props.viewStore.PointType === PointType.Occurrences) {
+        if (getGlobalModel('default', MView).PointType === PointType.Occurrences) {
             return PointType.Predictions
         }
         return PointType.Occurrences;
     };
 
+    @computed
     protected isInFocus = () => {
-        return this.props.viewStore && this.props.viewStore.InFocusField === InFocusField.FieldPointType
+        return getGlobalModel('default', MView).InFocusField === InFocusField.FieldPointType
     };
 
+
     protected selectAlternate = () => {
-        if (this.props.viewStore) {
-            this.props.viewStore.SetPointType(this.deselectedValue());
-            this.props.viewStore.SetInFocusField(InFocusField.FieldNone);
-        }
+        const mView = getGlobalModel('default', MView);
+        mView.SetPointType(this.deselectedValue());
+        mView.SetInFocusField(InFocusField.FieldNone);
     };
 
     protected toggleVisibility = () => {
-        if (this.props.viewStore) {
-            this.props.viewStore.SetInFocusField(
-                this.isInFocus() ? InFocusField.FieldNone : InFocusField.FieldPointType
-            );
-        }
+        getGlobalModel('default', MView).SetInFocusField(
+            this.isInFocus() ? InFocusField.FieldNone : InFocusField.FieldPointType
+        )
     }
 }

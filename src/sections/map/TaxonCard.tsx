@@ -1,30 +1,26 @@
-import { inject, observer } from 'mobx-react';
+import { observer } from 'mobx-react';
 import * as React from 'react';
 import Icon from '../../iconography/Icon';
 import {Close, Loading} from '../../iconography/Icons';
-import { TaxaStore } from '../../stores/taxa';
+import {getGlobalModel} from "../../stores/globals";
+import {MMapTaxa} from "../../stores/taxa";
 import {MView} from "../../stores/view";
 import './TaxonCard.css';
 
-interface ITaxonCardProps {
-  taxaStore?: TaxaStore;
-  viewStore?: MView;
-}
-
-@inject('taxaStore', 'viewStore')
 @observer
-export default class TaxonCard extends React.Component<ITaxonCardProps> {
+export default class TaxonCard extends React.Component {
   public render() {
-    const { taxaStore, viewStore } = this.props;
-    if (!taxaStore || !viewStore) {
+
+      const mView = getGlobalModel('default', MView);
+
+      const isVisible = mView.TaxonCardVisible;
+      const taxon = getGlobalModel('default', MMapTaxa).Selected;
+
+    if (!isVisible || !taxon) {
       return null;
     }
 
-    if (!viewStore.TaxonCardVisible || !taxaStore.Selected) {
-      return null;
-    }
-
-    if (taxaStore.Selected.FetchIsPending) {
+    if (taxon.FetchIsPending) {
       return (
         <div className="map-taxon-card">
           <Icon icon={Loading} width="50%" height="50%" />
@@ -40,20 +36,20 @@ export default class TaxonCard extends React.Component<ITaxonCardProps> {
           activeColor="#000"
           height={'15px'}
           width={'15px'}
-          onClick={viewStore.HideTaxonCard}
+          onClick={mView.HideTaxonCard}
         />
         <div className="map-taxon-card-media">
-          <img src={taxaStore.Selected.PhotoURL} />
+          <img src={taxon.PhotoURL} />
             {/*<div className="map-taxon-card-media-caption"></div>*/}
         </div>
         <div className="map-taxon-card-content">
-          <h3>{taxaStore.Selected.CommonName}</h3>
-          <h4>{taxaStore.Selected.ScientificName}</h4>
-            {taxaStore.Selected.Description &&
+          <h3>{taxon.CommonName}</h3>
+          <h4>{taxon.ScientificName}</h4>
+            {taxon.Description &&
                 <div>
-                  <h6 className="paragraph">{taxaStore.Selected.Description.Text}</h6>
+                  <h6 className="paragraph">{taxon.Description.Text}</h6>
                   <h6 style={{fontStyle: "italic", opacity: 0.4}}>
-                      {taxaStore.Selected.Description.Citation}
+                      {taxon.Description.Citation}
                   </h6>
                 </div>
             }
@@ -61,6 +57,5 @@ export default class TaxonCard extends React.Component<ITaxonCardProps> {
       </div>
     );
   }
-
 
 }

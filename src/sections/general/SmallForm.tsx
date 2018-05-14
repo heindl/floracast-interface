@@ -1,12 +1,13 @@
 import * as classNames from 'classnames';
-import { inject, observer } from 'mobx-react';
+import { observer } from 'mobx-react';
 import * as React from 'react';
 import Icon from '../../iconography/Icon';
 import { Loading, PaperPlane } from '../../iconography/Icons';
 import {
   ContactFormStateCode,
-  ContactFormStore,
+  MContactForm,
 } from '../../stores/contact-form';
+import {getGlobalModel} from "../../stores/globals";
 import './SmallForm.css';
 
 const headerTexts: Map<ContactFormStateCode, string> = new Map<
@@ -43,14 +44,13 @@ const headerTexts: Map<ContactFormStateCode, string> = new Map<
 // ]);
 
 interface ISmallFormProps {
-  contactFormStore?: ContactFormStore;
+  contactFormStore?: MContactForm;
 }
 
 interface ISmallFormState {
   emailValue: string;
 }
 
-@inject('contactFormStore')
 @observer
 export default class SmallForm extends React.Component<
   ISmallFormProps,
@@ -62,30 +62,27 @@ export default class SmallForm extends React.Component<
   }
 
   public render() {
-      const {contactFormStore} = this.props;
 
-      if (!contactFormStore) {
-          return null;
-      }
+      const mContactForm = getGlobalModel('default', MContactForm);
 
       return (
 
           <div className="small-form-container">
 
-              {contactFormStore.StateCode === ContactFormStateCode.Processing &&
+              {mContactForm.StateCode === ContactFormStateCode.Processing &&
                 <div className="small-form-content">
                     <Icon id="small-form-loading-icon" icon={Loading} height={"90%"} width={"auto"}/>
                 </div>
               }
-              {contactFormStore.StateCode !== ContactFormStateCode.Processing &&
+              {mContactForm.StateCode !== ContactFormStateCode.Processing &&
               <div className="small-form-content">
                   <h4 className="small-form-intro">
-                      {headerTexts.get(contactFormStore.StateCode)}
+                      {headerTexts.get(mContactForm.StateCode)}
                   </h4>
                   <form
                       className={classNames({
                           hidden:
-                          contactFormStore.StateCode === ContactFormStateCode.Complete,
+                          mContactForm.StateCode === ContactFormStateCode.Complete,
                           'small-form-form': true,
                       })}
                       onSubmit={this.saveEmail}

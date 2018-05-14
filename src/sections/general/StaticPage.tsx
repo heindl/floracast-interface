@@ -1,9 +1,8 @@
-import {Provider} from "mobx-react";
 import * as React from 'react';
 import * as ReactMarkdown from 'react-markdown';
 import {RouteComponentProps} from "react-router";
-import {ContactFormStore, getContactFormStore} from "../../stores/contact-form";
-import { getErrorStore } from '../../stores/errors';
+import MErrors from "../../stores/errors";
+import {getGlobalModel} from "../../stores/globals";
 import Header from './Header';
 import SmallForm from "./SmallForm";
 import './StaticPage.css';
@@ -30,11 +29,8 @@ export default class StaticPage extends React.Component<
   ITextPageState
 > {
 
-    protected contactFormStore: ContactFormStore;
-
     constructor(props: Props) {
         super(props);
-        this.contactFormStore = getContactFormStore(this.props.namespace);
         this.state = {};
         this.fetchMarkdown = this.fetchMarkdown.bind(this);
         if (props.match.params.page) {
@@ -43,7 +39,7 @@ export default class StaticPage extends React.Component<
     }
 
   public componentDidCatch(err: Error, info: React.ErrorInfo) {
-    getErrorStore('default').Report(err);
+    getGlobalModel('default', MErrors).Report(err);
   }
 
   public componentDidUpdate(prevProps: Props) {
@@ -61,7 +57,6 @@ export default class StaticPage extends React.Component<
   public render() {
 
     return (
-        <Provider contactFormStore={this.contactFormStore}>
       <div id="static-page">
           <div id="static-page-header">
             <Header />
@@ -83,7 +78,6 @@ export default class StaticPage extends React.Component<
           }
         </div>
       </div>
-        </Provider>
     );
   }
 

@@ -1,126 +1,153 @@
 import * as history from 'history';
-import {autorun, IReactionDisposer, IReactionOptions} from 'mobx';
-import {PointType} from "./view";
+import * as _ from 'lodash';
 
-export class RouterStore {
-
-    public static FormForecastPath(obj: {
-        city?: string;
-        state?: string;
-        date?: string;
-    }): string {
-        if (!obj.city || !obj.state) {
-            return '/forecast';
-        }
-        return [
-            '/forecast',
-            obj.state.toLowerCase().replace(' ', '+'),
-            obj.city && obj.city.toLowerCase().replace(' ', '+'),
-            obj.date,
-        ]
-            .filter((s) => s && s !== '')
-            .join('/');
-    }
-
-    public static FormMapPath(obj: {
-        pointType?: PointType;
-        coordStr?: string;
-        date?: string;
-        nameUsageId?: string;
-    }): string {
-        let r = '/map';
-        if (!obj.pointType) {
-            return r;
-        }
-        r += `/${obj.pointType && obj.pointType.toString().toLowerCase()}`;
-        if (!obj.coordStr) {
-            return r;
-        }
-        r += `/${obj.coordStr}`;
-        if (!obj.date) {
-            return r;
-        }
-        return (r += `/${obj.date}/${obj.nameUsageId || ''}`);
-    }
-
-  protected historyRef: history.History;
-  protected readonly namespace: string;
-
-  protected coordStore: MUser;
-  protected dateStore: MTime;
-  protected viewStore: MView;
-  protected taxaStore: TaxaStore;
-
-    protected unsubscribe: IReactionDisposer;
-
-  // This is really only necessary for testing. Should just listen to history.pathname.
-  // @observable public Path: string = '';
-
-    constructor(historyRef: history.History, namespace: string) {
-        this.namespace = namespace;
-        this.historyRef = historyRef;
-
-        this.coordStore = getCoordinateStore(this.namespace);
-        this.dateStore = getDateStore(this.namespace);
-        this.viewStore = getViewStore(this.namespace);
-        this.taxaStore = getTaxaStore(this.namespace);
-
-        const autoRunOptions: IReactionOptions = {fireImmediately: false, name: "Router Update"};
-        this.subscribe = this.subscribe.bind(this);
-        this.unsubscribe = autorun(
-            this.subscribe,
-            autoRunOptions
-        );
-    }
-
-
-
-    protected subscribe(){
-        const currentPathName = this.historyRef.location.pathname;
-        const prefix = currentPathName.split('/')[1];
-
-        if (prefix !== 'map' && prefix !== 'forecast') {
-            return;
-        }
-
-        this.viewStore.SetSection(prefix);
-
-        const pathname =
-            prefix !== 'map'
-                ? RouterStore.FormForecastPath({
-                    city: this.coordStore.City,
-                    date: this.dateStore.ActiveIsToday ? undefined : this.dateStore.DateString,
-                    state: this.coordStore.State,
-                })
-                : RouterStore.FormMapPath({
-                    coordStr: this.coordStore.Formatted,
-                    date: this.dateStore.DateString,
-                    nameUsageId: this.taxaStore.Selected && this.taxaStore.Selected.NameUsageID,
-                    pointType: this.viewStore.PointType,
-                });
-
-        if (pathname === currentPathName) {
-          return
-        }
-
-        this.historyRef.push(pathname);
-    };
-
-  protected dispose() {
-    this.unsubscribe();
-  };
+interface IParams {
+    lat?: number;
+    lng?: number;
+    zoom?: number;
+    nameUsageId?: string;
+    taxonCategory?: string;
+    date?: string;
+    locality?: string;
+    adminAreaLong?: string;
 }
 
-const namespaces: Map<string, RouterStore> = new Map();
+interface IPath {
+    params: IParams,
+    section: string,
+}
 
-export function getRouterStore(
-  historyRef: history.History,
-  namespace: string
-): RouterStore {
-  let store = namespaces.get(namespace);
-  if (!store) {
-    store = new RouterStore(historyRef, namespace);
-    namespaces.set(namespace, store);
-  }
-  return store;
+export class MRouter {
+
+    public HistoryRef: history.History;
+
+    protected readonly namespace: string;
+
+    constructor(namespace: string) {
+        this.namespace = namespace;
+        this.HistoryRef = history.createBrowserHistory()
+    }
+
+    public ParseCurrentPath = (): IPath => {
+        const sPath = this.HistoryRef.location.pathname.split("/");
+        const prefix = sPath[1];
+        if (prefix === 'map') {
+            return {
+                params: parseMapParams(sPath.slice(2)),
+                section: prefix,
+            }
+        }
+        if (prefix === 'forecast') {
+            return {
+                params: parseForecastParams(sPath.slice(2)),
+                section: prefix,
+            }
+        }
+        return {section: prefix, params: {}}
+    }
+
+
+    public NavigateTo = (i: IPath) => {
+
+        if (i.section !== 'map' && i.section !== 'forecast') {
+            return
+        }
+
+        // Merge with current
+        const current = this.ParseCurrentPath();
+
+        const params = _.assign(current.params, i.params);
+
+        const nPath = i.section === 'map' ? formMapPath(params) : formForecastPath(params);
+
+        if (nPath === this.HistoryRef.location.pathname) {
+            return
+        }
+
+        this.HistoryRef.push(nPath);
+    };
+
+}
+
+function formForecastPath(i: IParams): string {
+    if (!i.locality || !i.adminAreaLong) {
+        return '/forecast';
+    }
+    return [
+        '/forecast',
+        i.adminAreaLong.toLowerCase().replace(' ', '+'),
+        i.locality.toLowerCase().replace(' ', '+'),
+        i.date || '',
+    ]
+        .filter((s) => s && s !== '')
+        .join('/');
+}
+
+function formMapPath(i: IParams): string {
+    let r = '/map';
+    const coordStr = stringifyCoordinates(i);
+    if (coordStr === '') {
+        return r
+    }
+    r += `/${coordStr}`;
+    if (!i.date) {
+        return r;
+    }
+    return (r += `/${i.date}/${i.nameUsageId || ''}`);
+}
+
+function parseMapParams(params: string[]): IParams {
+    const iParams: IParams = (params.length >= 1) ? parseCoordinates(params[0]) : {};
+    if (params.length >= 2) {
+        iParams.date = params[1]
+    }
+    if (params.length >= 3) {
+        iParams.nameUsageId = params[2]
+    }
+    return iParams
+}
+
+function parseForecastParams(params: string[]): IParams {
+    const res: IParams = {};
+    if (params.length >= 1) {
+        res.adminAreaLong = params[0].replace("+", " ")
+    }
+    if (params.length >= 2) {
+        res.locality = params[1].replace("+", " ")
+    }
+    if (params.length >= 3) {
+        res.date = params[2].replace("+", " ")
+    }
+    return res
+}
+
+export function parseCoordinates(s: string): IParams {
+    const commaMatches = s.match(/,/gi);
+    if (
+        !commaMatches ||
+        commaMatches.length === 0 ||
+        !s.startsWith('@') ||
+        !s.endsWith('z')
+    ) {
+        // throw Error(
+        //     `Could not construct location with invalid path parameter [${loc}]`
+        // );
+        return {}
+    }
+    const divisions: string[] = s
+        .replace('@', '')
+        .replace('z', '')
+        .split(',');
+    return {
+        lat: parseFloat(divisions[0]),
+        lng: parseFloat(divisions[1]),
+        zoom: parseInt(divisions[2], 10),
+    };
+}
+
+function stringifyCoordinates(i: IParams): string {
+    if (!i.lat || !i.lng || i.lng === 0 || i.lat === 0) {
+        return ''
+    }
+    return `@${i.lat},${i.lng},${i.zoom || 9}z`
 }
