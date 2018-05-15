@@ -7,6 +7,7 @@ import {getGlobalModel} from "../../stores/globals";
 import MLocationMapCoordinates from "../../stores/location/map";
 import {parseCoordinates} from "../../stores/router";
 import {MMapTaxa} from "../../stores/taxa";
+import {MView} from "../../stores/view";
 import Navigation from './Navigation';
 import PointMap from './PointMap';
 import TaxonCard from "./TaxonCard";
@@ -47,16 +48,20 @@ class Index extends React.Component<Props> {
     }
 
     // Do before router store initialization in order to set to initial path.
-    updateMatchParams(props.match.params);
+    updateMatchParams({}, props.match.params);
   }
 
+
+  public componentDidMount() {
+      getGlobalModel('default', MView).SetSection('map');
+  }
 
   public componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
       getGlobalModel('default', MErrors).Report(error);
   }
 
   public componentWillReceiveProps(nextProps: Props) {
-    updateMatchParams(nextProps.match.params);
+    updateMatchParams(this.props.match.params, nextProps.match.params);
   }
 
   public render() {
@@ -68,35 +73,49 @@ class Index extends React.Component<Props> {
         }}>
           <Navigation />
           <TaxonCard />
-          <PointMap namespace={'default'} />
+          <PointMap />
         </div>
     );
   }
 
 }
 
-function updateMatchParams(params: IPathMatchParams) {
+function updateMatchParams(oParams: IPathMatchParams, nParams: IPathMatchParams) {
 
     const sCoords = getGlobalModel('default', MLocationMapCoordinates);
 
     // Eventually set the default to the most ecologically significant area in the country
+    const oPathCoordinates = parseCoordinates(oParams.coordinates || '');
     const coords = _.assign({
         lat: 37.9420743,
         lng: -107.9058009,
-        zoom: 6,
-    }, parseCoordinates(params.coordinates || ''));
+        zoom: 9,
+    }, parseCoordinates(nParams.coordinates || ''));
 
-    sCoords.SetCoordinates(coords.lat, coords.lng);
-    sCoords.SetZoom(coords.zoom);
+    console.log("updating path", coords, oParams.coordinates, nParams.coordinates)
 
-    if (params.date) {
-        const sTime = getGlobalModel('default', MTime);
-        sTime.FromFormattedString(params.date)
+    if (
+        coords.lng
+        && coords.lat
+        && coords.lat !== oPathCoordinates.lat
+        && coords.lng !== oPathCoordinates.lng) {
+        sCoords.SetCoordinates(coords.lat, coords.lng);
     }
 
-    if (params.nameUsageId) {
+    if (
+        coords.zoom
+        && coords.zoom !== oPathCoordinates.zoom) {
+        sCoords.SetZoom(coords.zoom);
+    }
+
+    if (nParams.date && oParams.date !== nParams.date) {
+        const sTime = getGlobalModel('default', MTime);
+        sTime.FromFormattedString(nParams.date)
+    }
+
+    if (nParams.nameUsageId && nParams.nameUsageId !== oParams.nameUsageId) {
         const mTaxa = getGlobalModel('default', MMapTaxa);
-        mTaxa.Select(params.nameUsageId);
+        mTaxa.Select(nParams.nameUsageId);
     }
 }
 

@@ -2,6 +2,8 @@ import * as React from 'react';
 import {Link} from "react-router-dom";
 import RandomGeoClusters from "../../iconography/RandomGeoClusters";
 import Wreath from "../../iconography/Wreath";
+import {getGlobalModel} from "../../stores/globals";
+import {MView} from "../../stores/view";
 import BetaForm from './BetaForm';
 import './Home.css';
 import Masthead from './Masthead';
@@ -9,6 +11,7 @@ import Masthead from './Masthead';
 export default class Home extends React.Component {
 
   public componentDidMount() {
+      getGlobalModel('default', MView).SetSection('forecast');
     window.scrollTo(0, 0);
   }
 

@@ -56,6 +56,6 @@ export default class ForecastPageTitleColumn extends React.Component {
     };
 
     protected incrementDate = () => {
-        getGlobalModel('default', MTime).Shift(-1)
+        getGlobalModel('default', MTime).Shift(1)
     }
 }

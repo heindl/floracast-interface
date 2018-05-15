@@ -19,7 +19,7 @@ interface IPath {
 
 export class MRouter {
 
-    public HistoryRef: history.History;
+    public readonly HistoryRef: history.History;
 
     protected readonly namespace: string;
 
@@ -67,6 +67,19 @@ export class MRouter {
         this.HistoryRef.push(nPath);
     };
 
+    public UpdateCurrentPath = (i: IParams) => {
+        const current = this.ParseCurrentPath();
+        if (current.section !== 'map' && current.section !== 'forecast') {
+            return
+        }
+
+        const params = _.assign(current.params, i);
+
+        this.HistoryRef.push(
+            current.section === 'map' ? formMapPath(params) : formForecastPath(params)
+        )
+    }
+
 }
 
 function formForecastPath(i: IParams): string {
@@ -75,8 +88,8 @@ function formForecastPath(i: IParams): string {
     }
     return [
         '/forecast',
-        i.adminAreaLong.toLowerCase().replace(' ', '+'),
-        i.locality.toLowerCase().replace(' ', '+'),
+        i.adminAreaLong.toLowerCase().trim().replace(' ', '+'),
+        i.locality.toLowerCase().trim().replace(' ', '+'),
         i.date || '',
     ]
         .filter((s) => s && s !== '')

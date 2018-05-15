@@ -4,7 +4,6 @@ import { observer } from 'mobx-react';
 const Vibrant = require('node-vibrant');
 import * as classnames from 'classnames';
 import * as _ from 'lodash';
-import {computed} from "mobx";
 import {Palette} from "node-vibrant/lib/color";
 import * as React from 'react';
 import {
@@ -20,7 +19,6 @@ import MLocationPlace from "../../stores/location/place";
 import {MRouter} from "../../stores/router";
 import Header from '../general/Header';
 import './Masthead.css';
-
 
 function importRandomImage(): string {
     const i = Math.floor(Math.random() * 14);
@@ -51,7 +49,16 @@ class Masthead extends React.Component<{}, IMastheadState> {
       getGlobalModel('default', MErrors).Report(error);
   }
 
+  public componentDidMount() {
+        const mCoords = getGlobalModel('default', MLocationUserCoordinates);
+        if (mCoords.Latitude === 0 || mCoords.Longitude === 0) {
+            mCoords.Geolocate()
+        }
+  }
+
   public render() {
+
+      const googleScriptHasLoaded = getGlobalModel('default', MLocationPlace).GoogleMapsScriptHasLoaded;
 
     return (
       <div id="masthead-container">
@@ -66,52 +73,54 @@ class Masthead extends React.Component<{}, IMastheadState> {
               ? 'What will you find outside?'
               : 'Where are you?'}
           </h1>
-        <div className="masthead-form">
-          <PlacesAutocomplete
-            renderSuggestion={this.autoCompleteItem}
-            // root, input, autocompleteContainer, autocompleteItem, autocompleteItemActive, googleLogoContainer, googleLogoImage
-            classNames={{
-              autocompleteContainer:
-                'masthead-autocomplete-container narrow',
-              autocompleteItem: 'masthead-autocomplete-item narrow',
-              autocompleteItemActive:
-                'masthead-autocomplete-item-active narrow',
-              input: `masthead-form-control`,
-              root: 'masthead-form-group',
-            }}
-            inputProps={{
-              onChange: this.handleInputChange,
-              placeholder: 'City, State',
-              type: 'search',
-              value: this.inputText(),
-            }}
-            onError={this.handleError}
-            onSelect={this.handleSelect}
-            onEnterKeyDown={this.handleSelect}
-            options={{
-              componentRestrictions: { country: ['us'] },
-              types: ['(cities)'],
-            }}
-          />
-          <button
-              className="masthead-form-button"
-              style={{
-                  backgroundColor: this.state.buttonHover ? this.state.mastScheme : "transparent",
-                  border: this.state.buttonHover ?  "2px solid transparent" : `2px solid ${this.state.mastScheme}`,
-              }}
-            onClick={this.handleButtonSelect}
-              onMouseEnter={this.toggleButtonHover}
-              onMouseLeave={this.toggleButtonHover}
-            type="submit"
-          >
-              <Icon
-                  icon={Search}
-                  selected={this.state.buttonHover}
-                  style={{opacity: this.state.buttonHover ? 0.7 : 1}}
-                  activeColor={this.state.logoScheme}
-                  color={this.state.mastScheme} />
-          </button>
-        </div>
+            {googleScriptHasLoaded &&
+            <div className="masthead-form">
+                <PlacesAutocomplete
+                    renderSuggestion={this.autoCompleteItem}
+                    // root, input, autocompleteContainer, autocompleteItem, autocompleteItemActive, googleLogoContainer, googleLogoImage
+                    classNames={{
+                        autocompleteContainer:
+                            'masthead-autocomplete-container narrow',
+                        autocompleteItem: 'masthead-autocomplete-item narrow',
+                        autocompleteItemActive:
+                            'masthead-autocomplete-item-active narrow',
+                        input: `masthead-form-control`,
+                        root: 'masthead-form-group',
+                    }}
+                    inputProps={{
+                        onChange: this.handleInputChange,
+                        placeholder: 'City, State',
+                        type: 'search',
+                        value: this.inputText(),
+                    }}
+                    onError={this.handleError}
+                    onSelect={this.handleSelect}
+                    onEnterKeyDown={this.handleSelect}
+                    options={{
+                        componentRestrictions: {country: ['us']},
+                        types: ['(cities)'],
+                    }}
+                />
+                <button
+                    className="masthead-form-button"
+                    style={{
+                        backgroundColor: this.state.buttonHover ? this.state.mastScheme : "transparent",
+                        border: this.state.buttonHover ? "2px solid transparent" : `2px solid ${this.state.mastScheme}`,
+                    }}
+                    onClick={this.handleButtonSelect}
+                    onMouseEnter={this.toggleButtonHover}
+                    onMouseLeave={this.toggleButtonHover}
+                    type="submit"
+                >
+                    <Icon
+                        icon={Search}
+                        selected={this.state.buttonHover}
+                        style={{opacity: this.state.buttonHover ? 0.7 : 1}}
+                        activeColor={this.state.logoScheme}
+                        color={this.state.mastScheme}/>
+                </button>
+            </div>
+            }
         </div>
         <svg
           className="masthead-circle"
@@ -148,7 +157,6 @@ class Masthead extends React.Component<{}, IMastheadState> {
     };
 
 
-    @computed
     protected inputText = (): string => {
 
         const mPlace = getGlobalModel('default', MLocationPlace);
@@ -170,7 +178,7 @@ class Masthead extends React.Component<{}, IMastheadState> {
     protected handleError = (status: string, clearSuggestion: () => void) => {
         getGlobalModel('default', MErrors).Report(Error(status));
         clearSuggestion();
-    }
+    };
 
     protected setMastheadColorFromPhoto = (e: React.SyntheticEvent<HTMLImageElement>) => {
         Vibrant.from(e.target).build().getPalette().then((p: Palette) => {

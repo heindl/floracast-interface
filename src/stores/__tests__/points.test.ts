@@ -8,7 +8,7 @@ import { when } from 'mobx';
 import * as PapaParse from 'papaparse';
 import * as uuid from 'uuid';
 import {MTime} from '../date';
-import {clearGlobalStores, getGlobalModel} from "../globals";
+import {getGlobalModel} from "../globals";
 import MLocationMapCoordinates from "../location/map";
 import {MMapPredictions} from "../points";
 import {MMapTaxa} from "../taxa";

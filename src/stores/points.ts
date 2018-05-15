@@ -1,11 +1,12 @@
-/* tslint:disable:max-classes-per-file */
+/* tslint:disable:max-classes-per-file no-var-requires */
 
 import * as geokdbush from 'geokdbush';
 import * as kdbush from 'kdbush';
 import * as _ from 'lodash';
 import {action, IReactionDisposer, observable, reaction} from 'mobx';
 import {S2Cell, S2LatLng} from "nodes2ts";
-import * as Papa from 'papaparse';
+const Papa = require('papaparse');
+import {ParseError} from "papaparse";
 import {MTime} from './date';
 import MErrors from './errors';
 import {getFirebaseStorageRef} from './firestore';
@@ -13,6 +14,8 @@ import {getGlobalModel} from "./globals";
 import MLocationMapCoordinates from "./location/map";
 import {MMapTaxa} from './taxa';
 import {PointType} from './view';
+
+Papa.RemoteChunkSize = undefined; // Resolves an issue with header type.
 
 /* Date, Latitude, Longitude, Prediction, ID */
 type TJSONResponsePoint = [number, number, number, number] | [number, number, number, number, string]
@@ -158,6 +161,7 @@ export class MMapPoints {
         getFirebaseStorageRef(this.namespace).ref(`${this.pointType.toLowerCase()}/${nameUsageId}.csv`).getDownloadURL().then((url) => {
             const res: IMapPoint[] = [];
             const mErrors = getGlobalModel(this.namespace, MErrors);
+
             Papa.parse(url, {
                 complete: () => {
                     this.geoindex = kdbush<IMapPoint>(
@@ -170,7 +174,7 @@ export class MMapPoints {
                 delimiter: ",",
                 download: true,
                 dynamicTyping: true,
-                error: (err) => {
+                error: (err: ParseError) => {
                     mErrors.Report(
                         err,
                         {'PointType': this.pointType, 'NameUsageId': nameUsageId},
@@ -185,7 +189,7 @@ export class MMapPoints {
                 },
                 fastMode: true,
                 header: false,
-                step: (row, parser) => {
+                step: (row: {data: TJSONResponsePoint[], errors: ParseError[]}, parser: Papa.Parser) => {
                     const a = row.data[0] as TJSONResponsePoint;
                     res.push({
                         date: a[0].toString(),
@@ -206,7 +210,7 @@ export class MMapPoints {
                         parser.abort()
                     }
                 },
-                worker: true,
+                // worker: true,
             });
         })
 

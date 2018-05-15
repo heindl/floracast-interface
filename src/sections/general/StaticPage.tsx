@@ -3,6 +3,7 @@ import * as ReactMarkdown from 'react-markdown';
 import {RouteComponentProps} from "react-router";
 import MErrors from "../../stores/errors";
 import {getGlobalModel} from "../../stores/globals";
+import {MView} from "../../stores/view";
 import Header from './Header';
 import SmallForm from "./SmallForm";
 import './StaticPage.css';
@@ -36,6 +37,10 @@ export default class StaticPage extends React.Component<
         if (props.match.params.page) {
             this.fetchMarkdown(props.match.params.page)
         }
+    }
+
+    public componentDidMount() {
+        getGlobalModel('default', MView).SetSection('static');
     }
 
   public componentDidCatch(err: Error, info: React.ErrorInfo) {

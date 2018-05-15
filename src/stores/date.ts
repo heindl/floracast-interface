@@ -1,6 +1,8 @@
 import * as _ from 'lodash';
 import { action, computed, observable } from 'mobx';
 import * as moment from 'moment';
+import {getGlobalModel} from "./globals";
+import {MRouter} from "./router";
 
 const WeekdaysPredictionsGenerated: { [key: number]: string } = {
   2: 'Tuesday',
@@ -89,11 +91,13 @@ export class MTime {
 
   @action
   protected fromMoment(m: moment.Moment) {
+      const router = getGlobalModel(this.namespace, MRouter);
     if (!(m.isoWeekday() in WeekdaysPredictionsGenerated)) {
       m = toStandardDay(m, -1)
     }
     if (this.activeUnix !== m.unix()) {
       this.activeUnix = m.unix();
+      router.UpdateCurrentPath({date: m.format("YYYYMMDD")})
     }
   }
 }

@@ -25,7 +25,7 @@ export default class ProtectedArea {
   protected readonly namespace: string;
   protected fireStoreRef: FirebaseFirestore;
   protected errorStore: MErrors;
-  // protected coordinateStore: CoordinateStore;
+  // protected mCoords: CoordinateStore;
 
   // protected unsubscribeDistance: IReactionDisposer;
 
@@ -37,7 +37,7 @@ export default class ProtectedArea {
 
         this.fireStoreRef = getFireStoreRef(namespace);
         this.errorStore = getGlobalModel(namespace, MErrors);
-        // this.coordinateStore = getCoordinateStore(namespace);
+        // this.mCoords = getCoordinateStore(namespace);
 
         const coords = S2CellId.fromToken(idToken).toLatLng();
 
@@ -47,7 +47,7 @@ export default class ProtectedArea {
         // this.unsubscribeDistance = autorun(() => {
         //   this.setDistanceKilometers(haversine(
         //       [this.Latitude, this.Longitude],
-        //       [this.coordinateStore.Latitude, this.coordinateStore.Longitude],
+        //       [this.mCoords.Latitude, this.mCoords.Longitude],
         //       {
         //           format: '[lat,lon]',
         //           unit: 'km',
@@ -113,13 +113,13 @@ export default class ProtectedArea {
   //       `Invalid static map height [${height}] and width [${width}].`
   //     );
   //   }
-  //   const coordinateStore = getCoordinateStore(this.namespace);
-  //   const bearing = coordinateStore.BearingTo(this.Latitude, this.Longitude);
+  //   const mCoords = getCoordinateStore(this.namespace);
+  //   const bearing = mCoords.BearingTo(this.Latitude, this.Longitude);
   //
   //   return {
   //     Bearing: bearing.i,
   //     BearingSymbol: bearing.s,
-  //     Distance: coordinateStore.DistanceKilometers(
+  //     Distance: mCoords.DistanceKilometers(
   //       this.Latitude,
   //       this.Longitude
   //     ),

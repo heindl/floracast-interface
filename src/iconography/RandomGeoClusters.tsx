@@ -1,8 +1,9 @@
 /* tslint:disable:max-classes-per-file */
-import {inject, observer} from "mobx-react";
+import {observer} from "mobx-react";
 import * as React from "react";
 import {Transition} from "react-transition-group";
-import {CoordinateStore} from "../stores/coordinates";
+import {getGlobalModel} from "../stores/globals";
+import {MLocationUserComputations} from "../stores/location/computation";
 import './RandomGeoClusters.css';
 
 interface ICircle {
@@ -89,7 +90,6 @@ interface IRandomGeoClustersProps{
     viewBox: [number, number];
     style?: object;
     totalCycleTime: number;
-    coordinateStore?: CoordinateStore;
 }
 
 interface IRandomGeoClustersState{
@@ -103,7 +103,6 @@ function getRandomInt(min: number, max: number): number {
     return Math.floor(Math.random() * (max - min)) + min;
 }
 
-@inject('coordinateStore', 'errorStore')
 @observer
 export default class RandomGeoClusters extends React.Component<IRandomGeoClustersProps, IRandomGeoClustersState> {
 
@@ -120,11 +119,6 @@ export default class RandomGeoClusters extends React.Component<IRandomGeoCluster
 
     public componentDidMount() {
 
-        const {coordinateStore} = this.props;
-        if (!coordinateStore) {
-            return
-        }
-
         this.generateCircles();
         this.intervalId = window.setInterval(this.generateCircles, this.props.totalCycleTime);
         this.setState({height: this.staticMapDiv.clientHeight, width: this.staticMapDiv.clientWidth})
@@ -137,12 +131,8 @@ export default class RandomGeoClusters extends React.Component<IRandomGeoCluster
 
     public render() {
 
-        const {coordinateStore} = this.props;
-        if (!coordinateStore) {
-            return
-        }
-
-        const mapLink = coordinateStore.StaticMapFunc.f(
+        const mComps = getGlobalModel('default', MLocationUserComputations);
+        const mapLink = mComps.StaticMapFunc.f(
             this.state.width || 0,
             this.state.height || 0,
             7

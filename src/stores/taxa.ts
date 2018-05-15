@@ -11,11 +11,22 @@ import {MTime} from "./date";
 import MErrors from "./errors";
 import {getFireStoreRef} from './firestore';
 import {getGlobalModel} from "./globals";
+import {MLocationMapComputations, MLocationUserComputations} from "./location/computation";
 import MLocationUserCoordinates from "./location/coordinate";
 import MLocationMapCoordinates from "./location/map";
 import Taxon from './taxon';
-import {InFocusField, PointType, MView} from './view';
+import {InFocusField, MView, PointType} from './view';
 
+
+interface ITaxaFetchData{
+    lat: number;
+    lng: number;
+    pointType: PointType;
+    date: string;
+    covering: S2CellId[];
+    inFocusField?: InFocusField;
+    section?: string;
+}
 
 class TaxaStore {
 
@@ -29,26 +40,30 @@ class TaxaStore {
 
     protected unsubscribe: IReactionDisposer;
 
-    constructor(namespace: string, mCoords: typeof MLocationUserCoordinates | typeof MLocationMapCoordinates) {
+    constructor(
+        namespace: string,
+        mCoordType: typeof MLocationUserCoordinates | typeof MLocationMapCoordinates,
+        mCompType: typeof MLocationUserComputations | typeof MLocationMapComputations,
+    ) {
         this.namespace = namespace;
 
-        const coordinateStore = getGlobalModel(namespace, mCoords);
+        const mCoords = getGlobalModel(namespace, mCoordType);
+        const mComps = getGlobalModel(namespace, mCompType);
+
         const viewStore = getGlobalModel(namespace, MView);
         const dateStore = getGlobalModel(namespace, MTime);
 
         this.unsubscribe = reaction(
-            () => {
-                return {
-                    covering: coordinateStore.Covering,
+            () => ({
+                    covering: mComps.Covering,
                     date: dateStore.DateString,
                     inFocusField: viewStore.InFocusField,
-                    lat: coordinateStore.Latitude,
-                    lng: coordinateStore.Longitude,
+                    lat: mCoords.Latitude,
+                    lng: mCoords.Longitude,
                     pointType: viewStore.PointType,
                     section: viewStore.Section,
-                }
-            },
-            (i) => this.fetchTaxa(i),
+            }),
+            (i: ITaxaFetchData) => this.fetchTaxa(i),
             {
                 fireImmediately: false,
                 name: "Taxa Fetch",
@@ -121,15 +136,10 @@ class TaxaStore {
     this.SetLoading(false);
   }
 
-  protected fetchTaxa(i: {
-      lat: number;
-      lng: number;
-      pointType: PointType;
-      date: string;
-      covering: S2CellId[];
-      inFocusField?: InFocusField;
-      section?: string;
-                      }){
+  protected fetchTaxa(i: ITaxaFetchData){
+
+
+        console.log("fetching taxa", i)
 
       const go = !_.isEmpty(i.lat)
           && !_.isEmpty(i.lng)
@@ -159,6 +169,8 @@ class TaxaStore {
       if (i.pointType === PointType.Predictions) {
         FetchPredictionTaxa(getFireStoreRef(this.namespace), i.covering, [i.lat, i.lng], i.date)
           .then((res: IPredictionResponse[]) => {
+
+              console.log("Taxa Response", res)
             this.setPredictionTaxa(res);
           })
           .catch((err) => {
@@ -187,12 +199,12 @@ class TaxaStore {
 
 export class MUserTaxa extends TaxaStore {
     constructor(namespace: string) {
-        super(namespace, MLocationUserCoordinates)
+        super(namespace, MLocationUserCoordinates, MLocationUserComputations)
     }
 }
 
 export class MMapTaxa extends TaxaStore {
     constructor(namespace: string) {
-        super(namespace, MLocationMapCoordinates)
+        super(namespace, MLocationMapCoordinates, MLocationMapComputations)
     }
 }

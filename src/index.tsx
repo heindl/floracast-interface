@@ -99,7 +99,6 @@ ReactDOM.render(
             path="/:page"
             component={AsyncStatic}
             name="static-page"
-            namespace="default"
         />
       </Switch>
     </div>

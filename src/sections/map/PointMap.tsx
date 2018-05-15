@@ -82,11 +82,11 @@ interface IPointMapState {
 
 @observer
 export default class PointMap extends React.Component<
-    {},
+    any,
   IPointMapState
 > {
 
-  constructor(props: {}) {
+  constructor(props: any) {
     super(props);
     this.state = {
       mapReady: false,
@@ -95,7 +95,7 @@ export default class PointMap extends React.Component<
 
   public render() {
 
-      const mCoords = getGlobalModel('namespace', MLocationMapCoordinates);
+      const mCoords = getGlobalModel('default', MLocationMapCoordinates);
 
     console.log("Creating Map", mCoords.Latitude, mCoords.Longitude, mCoords.Zoom)
     return (
@@ -149,15 +149,15 @@ export default class PointMap extends React.Component<
   }
 
     protected geolocate = () => {
-        getGlobalModel('namespace', MLocationMapCoordinates).Geolocate()
+        getGlobalModel('default', MLocationMapCoordinates).Geolocate()
     };
 
   protected zoomIn = () => {
-      getGlobalModel('namespace', MLocationMapCoordinates).IncrementZoom(1)
+      getGlobalModel('default', MLocationMapCoordinates).IncrementZoom(1)
   }
 
     protected zoomOut = () => {
-        getGlobalModel('namespace', MLocationMapCoordinates).IncrementZoom(-1)
+        getGlobalModel('default', MLocationMapCoordinates).IncrementZoom(-1)
     }
 
   protected handleMapReady = () => {
@@ -165,12 +165,12 @@ export default class PointMap extends React.Component<
   };
 
   protected handleMapMove = (e: Leaflet.LeafletEvent) => {
-      const mCoords = getGlobalModel('namespace', MLocationMapCoordinates);
+      const mCoords = getGlobalModel('default', MLocationMapCoordinates);
       mCoords.SetCoordinates(
           e.target.getCenter().lat,
           e.target.getCenter().lng
       );
-      mCoords.SetZoom(e.target.getCenter().zoom)
+      mCoords.SetZoom(e.target.getZoom())
   }
 }
 

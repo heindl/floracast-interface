@@ -5,6 +5,7 @@ import MErrors from '../../stores/errors';
 import {getGlobalModel} from "../../stores/globals";
 import MLocationUserCoordinates, {DefaultRadius} from "../../stores/location/coordinate";
 import MLocationPlace from "../../stores/location/place";
+import {MView} from "../../stores/view";
 import ForecastPage from './Page';
 import './Page.css';
 
@@ -24,19 +25,32 @@ type Props = IForecastIndexProps & RouteComponentProps<{}>;
 
 class ForecastIndex extends React.Component<Props> {
 
+    protected mCoords: MLocationUserCoordinates;
+    protected mPlace: MLocationPlace;
+    protected mTime: MTime;
+
 
   constructor(props: Props) {
     super(props);
-    if (!props.history) {
-      throw Error('History Props not Found');
-    }
-
+      this.mCoords = getGlobalModel('default', MLocationUserCoordinates);
+      this.mPlace = getGlobalModel('default', MLocationPlace);
+      this.mTime = getGlobalModel('default', MTime);
     // Do before router store initialization in order to set to initial path.
-    this.updateMatchParams(props.match.params);
+      if (!props.match.params.city || !props.match.params.state) {
+          // this.updateMatchParams(props.match.params);
+          this.mCoords.Geolocate();
+      }
+      this.updateMatchParams({}, this.props.match.params);
+      this.mCoords.SetRadius(DefaultRadius);
+  }
+
+  public componentDidMount() {
+      getGlobalModel('default', MView).SetSection('forecast');
   }
 
   public componentWillReceiveProps(nextProps: IForecastIndexProps) {
-      this.updateMatchParams(nextProps.match.params);
+
+      this.updateMatchParams(this.props.match.params, nextProps.match.params);
   }
 
   public componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
@@ -49,26 +63,21 @@ class ForecastIndex extends React.Component<Props> {
       );
   }
 
-  protected updateMatchParams = (params: IPathMatchParams) => {
+  protected updateMatchParams = (oParams: IPathMatchParams, nParams: IPathMatchParams) => {
 
-    const mCoords = getGlobalModel('default', MLocationUserCoordinates);
-    const mPlace = getGlobalModel('default', MLocationPlace);
-    const mTime = getGlobalModel('default', MTime);
+    if (nParams.city && nParams.state) {
+        if (oParams.city !== nParams.city || oParams.state !== nParams.state) {
+            const city = nParams.city.replace("+", " ");
+            const state = nParams.state.replace("+", " ");
+            this.mPlace.ReverseGeocode({
+                address: `${city}, ${state}`,
+            });
+        }
+        if (nParams.date && oParams.date !== nParams.date) {
+          this.mTime.FromFormattedString(nParams.date);
+        }
+    }
 
-    if (params.city && params.state) {
-        const city = params.city.replace("+", " ");
-        const state = params.state.replace("+", " ");
-        mCoords.SetRadius(DefaultRadius);
-        mPlace.ReverseGeocode({
-            address: `${city}, ${state}`,
-        });
-    } else {
-        mCoords.SetRadius(DefaultRadius);
-        mCoords.Geolocate();
-    }
-    if (params.date) {
-      mTime.FromFormattedString(params.date);
-    }
   };
 
 

@@ -18,14 +18,10 @@ export default class PointTypeSearchField extends React.Component<
     [PointType.Predictions]: "Where we'd look",
   };
 
-  constructor(props: IViewStoreProps) {
-    super(props);
-  }
-
   public render() {
 
-    const isInFocus = this.isInFocus();
-    const deselectedPointType = this.deselectedValue();
+    const isInFocus = this.isInFocus;
+    const deselectedPointType = this.deselectedValue;
     const pointType = getGlobalModel('default', MView).PointType;
 
     return (
@@ -67,28 +63,30 @@ export default class PointTypeSearchField extends React.Component<
   }
 
   @computed
-    protected deselectedValue = () => {
-        if (getGlobalModel('default', MView).PointType === PointType.Occurrences) {
+    protected get deselectedValue(): PointType {
+        const pointType = getGlobalModel('default', MView).PointType;
+        if (pointType === PointType.Occurrences) {
             return PointType.Predictions
         }
         return PointType.Occurrences;
     };
 
     @computed
-    protected isInFocus = () => {
-        return getGlobalModel('default', MView).InFocusField === InFocusField.FieldPointType
+    protected get isInFocus(): boolean {
+        const inFocusField = getGlobalModel('default', MView).InFocusField;
+        return inFocusField === InFocusField.FieldPointType
     };
 
 
     protected selectAlternate = () => {
         const mView = getGlobalModel('default', MView);
-        mView.SetPointType(this.deselectedValue());
+        mView.SetPointType(this.deselectedValue);
         mView.SetInFocusField(InFocusField.FieldNone);
     };
 
     protected toggleVisibility = () => {
         getGlobalModel('default', MView).SetInFocusField(
-            this.isInFocus() ? InFocusField.FieldNone : InFocusField.FieldPointType
+            this.isInFocus ? InFocusField.FieldNone : InFocusField.FieldPointType
         )
     }
 }

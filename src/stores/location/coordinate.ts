@@ -1,6 +1,7 @@
 import { action, observable } from 'mobx';
 import MErrors from '../errors';
 import {getGlobalModel} from "../globals";
+import {MRouter} from "../router";
 
 const Asheville = [35.538851, -82.7054901];
 export const DefaultRadius: number = 160;
@@ -54,8 +55,10 @@ export default class MLocationUserCoordinates {
         if (lat === this.Latitude && lng === this.Longitude) {
             return;
         }
+        console.log("Setting Lat/Lng", lat, lng)
         this.Latitude = lat;
         this.Longitude = lng;
+        getGlobalModel(this.namespace, MRouter).UpdateCurrentPath({lat, lng})
     }
 
     @action

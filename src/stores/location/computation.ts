@@ -42,10 +42,10 @@ function symbolFromBearing(b: number): string {
 
 class MLocationComputations {
 
-    protected readonly coordinateStore: MLocationUserCoordinates;
+    protected readonly mCoords: MLocationUserCoordinates;
 
     constructor(namespace: string, mCoords: typeof MLocationUserCoordinates | typeof MLocationMapCoordinates) {
-        this.coordinateStore = getGlobalModel(namespace, mCoords)
+        this.mCoords = getGlobalModel(namespace, mCoords)
     }
 
     @computed
@@ -55,8 +55,8 @@ class MLocationComputations {
             zoom: number,
         ) => string | undefined} {
 
-        const lat = this.coordinateStore.Latitude;
-        const lng = this.coordinateStore.Longitude;
+        const lat = this.mCoords.Latitude;
+        const lng = this.mCoords.Longitude;
 
         const mapboxAPIPrefix: string = 'https://api.mapbox.com/styles/v1/mapbox';
         const mapboxStyle: string = 'cj44mfrt20f082snokim4ungi';
@@ -68,6 +68,7 @@ class MLocationComputations {
                 height: number,
                 zoom: number,
             ): string | undefined => {
+
                 if (lat === 0 || lng === 0 || height === 0 || width === 0) {
                     return undefined
                 }
@@ -80,42 +81,42 @@ class MLocationComputations {
 
     @computed
     public get DMS(): string {
-        if (!this.coordinateStore.Latitude || !this.coordinateStore.Longitude) {
+        if (!this.mCoords.Latitude || !this.mCoords.Longitude) {
             return ''
         }
-        return formatcoords(this.coordinateStore.Latitude, this.coordinateStore.Longitude).format(undefined, {
+        return formatcoords(this.mCoords.Latitude, this.mCoords.Longitude).format(undefined, {
             decimalPlaces: 3,
             latLonSeparator: ' ',
         });
     }
 
-    @computed
-    public get CoveringAtLevelSeven(): string[] {
-
-        const lat = this.coordinateStore.Latitude;
-        const lng = this.coordinateStore.Longitude;
-        const radius = this.coordinateStore.Radius;
-
-        if (!radius || radius === 0 || lat === 0 || lng === 0) {
-            return []
-        }
-
-        const region = Utils.calcRegionFromCenterRadius(
-            S2LatLng.fromDegrees(lat, lng),
-            radius
-        );
-
-        const coverer = new S2RegionCoverer().setMaxLevel(7).setMinLevel(7);
-
-        return coverer.getInteriorCoveringCells(region).map((cellId) => cellId.toToken());
-    }
+    // @computed
+    // public get CoveringAtLevelSeven(): string[] {
+    //
+    //     const lat = this.mCoords.Latitude;
+    //     const lng = this.mCoords.Longitude;
+    //     const radius = this.mCoords.Radius;
+    //
+    //     if (!radius || radius === 0 || lat === 0 || lng === 0) {
+    //         return []
+    //     }
+    //
+    //     const region = Utils.calcRegionFromCenterRadius(
+    //         S2LatLng.fromDegrees(lat, lng),
+    //         radius
+    //     );
+    //
+    //     const coverer = new S2RegionCoverer().setMaxLevel(7).setMinLevel(7);
+    //
+    //     return coverer.getInteriorCoveringCells(region).map((cellId) => cellId.toToken());
+    // }
 
     @computed
     public get Covering(): S2CellId[] {
 
-        const lat = this.coordinateStore.Latitude;
-        const lng = this.coordinateStore.Longitude;
-        const radius = this.coordinateStore.Radius;
+        const lat = this.mCoords.Latitude;
+        const lng = this.mCoords.Longitude;
+        const radius = this.mCoords.Radius;
 
         if (!radius || radius === 0 || lat === 0 || lng === 0) {
             return []
@@ -128,11 +129,9 @@ class MLocationComputations {
 
         const coverer = new S2RegionCoverer().setMaxCells(15);
 
-        return coverer.getInteriorCoveringCells(region);
-
         // console.log(JSON.stringify(
         //   {
-        //       features: cellIds.map((id) => {
+        //       features: coverer.getCoveringCells(region).map((id) => {
         //         // const c = new S2Cell(id).id.parent();
         //         const p = new S2Cell(id)
         //         return p.toGEOJSON()
@@ -141,6 +140,8 @@ class MLocationComputations {
         //   }
         // ))
         // return cellIds;
+
+        return coverer.getCoveringCells(region);
     }
     // public DistanceKilometers(latitude: number, longitude: number): number {
     //   return computed((): number => {
@@ -161,8 +162,8 @@ class MLocationComputations {
 
         return (latitude: number, longitude: number): IBearing => {
 
-            const oLatitude = this.coordinateStore.Latitude;
-            const oLongitude = this.coordinateStore.Longitude;
+            const oLatitude = this.mCoords.Latitude;
+            const oLongitude = this.mCoords.Longitude;
 
             const bearing = geolib.getBearing(
                 {latitude: oLatitude, longitude: oLongitude},

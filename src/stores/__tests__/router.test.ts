@@ -7,7 +7,6 @@ import {} from 'jest';
 import * as uuid from 'uuid';
 import {getGlobalModel} from "../globals";
 import {MRouter} from "../router";
-import sleep from "../../utils/sleep.mock";
 
 describe('router', () => {
 

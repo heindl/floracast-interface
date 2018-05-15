@@ -62,7 +62,7 @@ export default class Navigation extends React.Component<{}> {
     // const dateFuncWord =
     //   viewStore.PointType === PointType.Occurrences ? 'in' : 'on';
 
-      const selectedTaxon = getGlobalModel('namespace', MMapTaxa).Selected;
+      const selectedTaxon = getGlobalModel('default', MMapTaxa).Selected;
 
     return (
       <div id="navigation">

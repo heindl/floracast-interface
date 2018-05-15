@@ -22,7 +22,7 @@ export class MView {
     @observable public TimelineIsVisible: boolean = true;
     @observable public ProtectedAreaToken: string = '';
     @observable public HoveredMapDivIcon: string = '';
-    @observable public Section: 'map' | 'forecast';
+    @observable public Section: 'map' | 'forecast' | 'home' | 'static';
 
   protected readonly namespace: string;
 
@@ -38,7 +38,7 @@ export class MView {
   }
 
   @action
-    public SetSection(s: 'map' | 'forecast') {
+    public SetSection(s: 'map' | 'forecast' | 'home' | 'static') {
         if (this.Section !== s) {
             this.Section = s;
         }
