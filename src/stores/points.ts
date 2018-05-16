@@ -1,21 +1,19 @@
-/* tslint:disable:max-classes-per-file no-var-requires */
-
+/* tslint:disable:no-var-requires max-classes-per-file */
 import * as geokdbush from 'geokdbush';
 import * as kdbush from 'kdbush';
 import * as _ from 'lodash';
 import {action, IReactionDisposer, observable, reaction} from 'mobx';
 import {S2Cell, S2LatLng} from "nodes2ts";
 const Papa = require('papaparse');
-import {ParseError} from "papaparse";
 import {MTime} from './date';
 import MErrors from './errors';
-import {getFirebaseStorageRef} from './firestore';
 import {getGlobalModel} from "./globals";
 import MLocationMapCoordinates from "./location/map";
 import {MMapTaxa} from './taxa';
 import {PointType} from './view';
 
-Papa.RemoteChunkSize = undefined; // Resolves an issue with header type.
+// Papa.RemoteChunkSize = undefined; // Resolves an issue with header type.
+Papa.SCRIPT_PATH = `${process.env.PUBLIC_URL}/papaparse.js`;
 
 /* Date, Latitude, Longitude, Prediction, ID */
 type TJSONResponsePoint = [number, number, number, number] | [number, number, number, number, string]
@@ -37,11 +35,7 @@ export class MMapPoints {
     @observable
     public IsLoading: boolean = false;
 
-    protected geoindex: kdbush.KDBush<IMapPoint> = kdbush(
-        [],
-        (a: IMapPoint) => a.longitude,
-        (a: IMapPoint) => a.latitude
-    );
+    protected geoindex: _.Dictionary<kdbush.KDBush<TJSONResponsePoint>> = {};
 
   protected readonly namespace: string;
     protected readonly pointType: PointType;
@@ -85,28 +79,74 @@ export class MMapPoints {
 
     }
 
-    public GetPoints(latitude: number, longitude: number, radius: number, date: string): IMapPoint[] {
-
+    public GetAggregation(latitude: number, longitude: number, radius: number, date: string): [number, number] {
         if (latitude === 0 || longitude === 0 || radius === 0 || date.trim() === '') {
-            return []
+            return [0, 0]
         }
 
-        const filterByDate = (v: IMapPoint) => {
+        if (!(this.geoindex.hasOwnProperty(date))) {
+            return [0, 0]
+        }
+
+        const filterByDate = (v: TJSONResponsePoint) => {
             if (date.length === 2) {
                 // Assume to be month.
-                return v.date.substr(4, 2) === date;
+                return v[0].toString().substr(4, 2) === date;
             }
-            return v.date === date;
+            return v[0].toString() === date;
         };
 
-        return geokdbush.around(
-            this.geoindex,
+        const points = geokdbush.around(
+            this.geoindex[date],
             longitude,
             latitude,
             undefined,
             radius,
             filterByDate,
         );
+        const predMean = this.pointType === PointType.Predictions ?
+            (_.sumBy<TJSONResponsePoint>(points, (p: TJSONResponsePoint) => p[3]) / points.length) :
+            0;
+
+        return [points.length, predMean]
+
+    }
+
+    public GetPoints(latitude: number, longitude: number, radius: number, date: string): IMapPoint[] {
+
+        if (latitude === 0 || longitude === 0 || radius === 0 || date.trim() === '') {
+            return []
+        }
+
+        if (!(this.geoindex.hasOwnProperty(date))) {
+            return []
+        }
+
+        const filterByDate = (v: TJSONResponsePoint) => {
+            if (date.length === 2) {
+                // Assume to be month.
+                return v[0].toString().substr(4, 2) === date;
+            }
+            return v[0].toString() === date;
+        };
+
+        return geokdbush.around(
+            this.geoindex[date],
+            longitude,
+            latitude,
+            undefined,
+            radius,
+            filterByDate,
+        ).map((a: TJSONResponsePoint) => {
+            return {
+                date,
+                id: a.length === 5 ? a[4] : S2Cell.fromLatLng(S2LatLng.fromDegrees(a[1], a[2]).normalized()).id.toToken(),
+                latitude: a[1],
+                longitude: a[2],
+                pointType: this.pointType,
+                prediction: this.pointType === PointType.Predictions ? a[3] : undefined,
+            }
+        })
     }
 
     protected dispose() {
@@ -123,7 +163,7 @@ export class MMapPoints {
         radius: number;
     }) {
         const go = !_.isNil(i)
-            && this.geoindex.points.length > 0
+            && this.geoindex.hasOwnProperty(i.date)
             && !i.isLoading
             && i.latitude !== 0
             && i.longitude !== 0
@@ -146,73 +186,101 @@ export class MMapPoints {
 
     protected fetchJSON(nameUsageId?: string) {
 
+        if (this.pointType === PointType.Occurrences) {
+            return
+        }
+
         this.setLoading(true);
 
         if (!nameUsageId || nameUsageId === '') {
-            this.geoindex = kdbush<IMapPoint>(
-                [],
-                (a: IMapPoint) => a.longitude,
-                (a: IMapPoint) => a.latitude
-            );
+            this.geoindex = {};
             this.setLoading(false);
             return
         }
 
-        getFirebaseStorageRef(this.namespace).ref(`${this.pointType.toLowerCase()}/${nameUsageId}.csv`).getDownloadURL().then((url) => {
-            const res: IMapPoint[] = [];
-            const mErrors = getGlobalModel(this.namespace, MErrors);
+        // getFirebaseStorageRef(this.namespace)
+        //     .ref(`${this.pointType.toLowerCase()}/${nameUsageId}.csv`)
+        //     .getDownloadURL()
+        //     .then((url) => {
 
-            Papa.parse(url, {
-                complete: () => {
-                    this.geoindex = kdbush<IMapPoint>(
-                        res,
-                        (a: IMapPoint) => a.longitude,
-                        (a: IMapPoint) => a.latitude
-                    );
-                    this.setLoading(false);
-                },
-                delimiter: ",",
-                download: true,
-                dynamicTyping: true,
-                error: (err: ParseError) => {
-                    mErrors.Report(
-                        err,
-                        {'PointType': this.pointType, 'NameUsageId': nameUsageId},
-                        `Could not parse CSV file`
-                    );
-                    this.geoindex = kdbush(
-                        [],
-                        (a: IMapPoint) => a.longitude,
-                        (a: IMapPoint) => a.latitude
-                    );
-                    this.setLoading(false)
-                },
-                fastMode: true,
-                header: false,
-                step: (row: {data: TJSONResponsePoint[], errors: ParseError[]}, parser: Papa.Parser) => {
-                    const a = row.data[0] as TJSONResponsePoint;
-                    res.push({
-                        date: a[0].toString(),
-                        id: a.length === 5 ? a[4] : S2Cell.fromLatLng(S2LatLng.fromDegrees(a[1], a[2]).normalized()).id.toToken(),
-                        latitude: a[1],
-                        longitude: a[2],
-                        pointType: this.pointType,
-                        prediction: this.pointType === PointType.Predictions ? a[3] : undefined,
+
+        const mErrors = getGlobalModel(this.namespace, MErrors);
+
+        Papa.parse(
+            `https://floracast-map-data.storage.googleapis.com/${this.pointType.toLowerCase()}/${nameUsageId}.csv`,
+            {
+            complete: (parseResults: {data: TJSONResponsePoint[], errors: Papa.ParseError[]}) => {
+
+                if (parseResults.errors.length > 0) {
+                    parseResults.errors.forEach((err) => {
+                        mErrors.Report(
+                            err,
+                            {'PointType': this.pointType, 'NameUsageId': nameUsageId},
+                            `Could not parse csv line`);
                     });
+                    return
+                }
 
-                    if (row.errors.length > 0) {
-                        row.errors.forEach((err) => {
-                            mErrors.Report(
-                                err,
-                                {'PointType': this.pointType, 'NameUsageId': nameUsageId},
-                                `Could not parse csv line`);
-                        });
-                        parser.abort()
-                    }
-                },
-                // worker: true,
-            });
-        })
+                // this.geoindex = _.flow(
+                //     _.groupBy(p => p[0].toString()),
+                //     _.mapValues((pts) => kdbush<TJSONResponsePoint>(
+                //             pts,
+                //             (a: TJSONResponsePoint) => a[2],
+                //             (a: TJSONResponsePoint) => a[1]
+                //         )
+                //     )(parseResults.data);
+
+                this.geoindex = _.chain(parseResults.data)
+                    .groupBy((p) => p[0].toString())
+                    .mapValues((pts) => kdbush<TJSONResponsePoint>(
+                            pts,
+                            (a: TJSONResponsePoint) => a[2],
+                            (a: TJSONResponsePoint) => a[1]
+                    )).value();
+
+                this.setLoading(false);
+            },
+            download: true,
+            dynamicTyping: true,
+            error: (err: Papa.ParseError) => {
+                mErrors.Report(
+                    err,
+                    {'PointType': this.pointType, 'NameUsageId': nameUsageId},
+                    `Could not parse CSV file`
+                );
+                this.geoindex = {};
+                this.setLoading(false)
+            },
+            fastMode: true,
+            header: false,
+            // chunk: (parseResults: {data: TJSONResponsePoint[], errors: Papa.ParseError[]}, parser: Papa.Parser) => {
+            //
+            //     if (parseResults.errors.length > 0) {
+            //         parseResults.errors.forEach((err) => {
+            //             mErrors.Report(
+            //                 err,
+            //                 {'PointType': this.pointType, 'NameUsageId': nameUsageId},
+            //                 `Could not parse csv line`);
+            //         });
+            //         parser.abort();
+            //         return
+            //     }
+            //
+            //     res.push(...parseResults.data.map((a: TJSONResponsePoint) => {
+            //         return {
+            //             date: a[0].toString(),
+            //             id: a.length === 5 ? a[4] : S2Cell.fromLatLng(S2LatLng.fromDegrees(a[1], a[2]).normalized()).id.toToken(),
+            //             latitude: a[1],
+            //             longitude: a[2],
+            //             pointType: this.pointType,
+            //             prediction: this.pointType === PointType.Predictions ? a[3] : undefined,
+            //         }
+            //     }));
+            //
+            // },
+            // withCredentials: true,
+            worker: true,
+        });
 
     }
 

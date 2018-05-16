@@ -6,6 +6,7 @@
   "linterOptions": {
     "exclude": [
       "config/**/*.js",
+      "public/papaparse.js",
       "node_modules/**/*.ts"
     ]
   }

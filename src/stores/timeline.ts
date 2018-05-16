@@ -7,7 +7,7 @@ import * as moment from 'moment';
 import {MTime} from "./date";
 import {getGlobalModel} from "./globals";
 import MLocationMapCoordinates from "./location/map";
-import {IMapPoint, MMapOccurrences, MMapPoints, MMapPredictions} from "./points";
+import {MMapOccurrences, MMapPoints, MMapPredictions} from "./points";
 import {PointType} from './view';
 
 export interface ITickMark {
@@ -146,13 +146,12 @@ export class MMapTimeline {
         const fmt = this.pointType === PointType.Occurrences ? 'MM' : 'YYYYMMDD';
 
         return this.dates().map((m: moment.Moment) => {
-            const points = mPredictions.GetPoints(latitude, longitude, radius, m.format(fmt));
-            const predictionTotal = _.sumBy<IMapPoint>(points, (p: IMapPoint) => p.prediction || 0);
+            const aggr = mPredictions.GetAggregation(latitude, longitude, radius, m.format(fmt));
 
             const mark: ITickMark = {
                 moment: m,
-                pointCount: points.length,
-                predictionMean: predictionTotal > 0 ?  predictionTotal / points.length : 0,
+                pointCount: aggr[0],
+                predictionMean: aggr[1],
                 x: scale(m.clone().set('year', 2017).toDate()),
                 y: 0,
             };

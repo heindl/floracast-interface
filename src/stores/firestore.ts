@@ -24,17 +24,24 @@ const globalAppConnection: IFirebaseAppCover = firebase.initializeApp({
     projectId: process.env.REACT_APP_FLORACAST_FIRESTORE_PROJECT_ID,
 });
 
+
 if (!globalAppConnection.firestore || !globalAppConnection.storage) {
     throw Error(`Global firestore or store connection not found`)
 }
 
-const globalFireStoreConnection = globalAppConnection.firestore();
-const globalFirebaseStorageConnection = globalAppConnection.storage(process.env.REACT_APP_FLORACAST_STORAGE_BUCKET);
+// const globalFireStoreConnection = globalAppConnection.firestore();
+// const globalFirebaseStorageConnection = globalAppConnection.storage(process.env.REACT_APP_FLORACAST_STORAGE_BUCKET);
 
 export function getFireStoreRef(namespace: string): FirebaseFirestore {
-    return globalFireStoreConnection
+    if (!globalAppConnection.firestore) {
+        throw Error('Firestore doesn\'t exist')
+    }
+    return globalAppConnection.firestore();
 }
 
 export function getFirebaseStorageRef(namespace: string): FirebaseStorage {
-    return globalFirebaseStorageConnection
+    if (!globalAppConnection.storage) {
+        throw Error("Firebase Storage doesn't exist")
+    }
+    return globalAppConnection.storage(process.env.REACT_APP_FLORACAST_STORAGE_BUCKET)
 }

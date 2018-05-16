@@ -5,7 +5,6 @@
 import '@firebase/firestore';
 import {} from 'jest';
 import { when } from 'mobx';
-import * as PapaParse from 'papaparse';
 import * as uuid from 'uuid';
 import {MTime} from '../date';
 import {getGlobalModel} from "../globals";
@@ -13,8 +12,6 @@ import MLocationMapCoordinates from "../location/map";
 import {MMapPredictions} from "../points";
 import {MMapTaxa} from "../taxa";
 import {MMapPredictionTimeline} from "../timeline";
-
-PapaParse.RemoteChunkSize = undefined; // Resolve an issue with header type.
 
 const MN = [44.9708547, -93.4012199];
 const CHI = [41.8339058, -88.0114663];
