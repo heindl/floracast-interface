@@ -1,14 +1,11 @@
 /* tslint:disable:no-var-requires max-classes-per-file */
-import * as geokdbush from 'geokdbush';
-import * as kdbush from 'kdbush';
 import * as _ from 'lodash';
 import {action, IReactionDisposer, observable, reaction} from 'mobx';
-import {S2Cell, S2LatLng} from "nodes2ts";
 const Papa = require('papaparse');
-import {MTime} from './date';
+import supercluster, {Supercluster} from 'supercluster';
 import MErrors from './errors';
 import {getGlobalModel} from "./globals";
-import MLocationMapCoordinates from "./location/map";
+import {TileSize, ZoomMinimum} from "./location/map";
 import {MMapTaxa} from './taxa';
 import {PointType} from './view';
 
@@ -30,25 +27,23 @@ export interface IMapPoint{
 export class MMapPoints {
 
     @observable
-    public MapPoints = observable.array<IMapPoint>([], {deep: false});
-
-    @observable
     public IsLoading: boolean = false;
 
-    protected geoindex: _.Dictionary<kdbush.KDBush<TJSONResponsePoint>> = {};
+    // protected geoindex: _.Dictionary<kdbush.KDBush<TJSONResponsePoint>> = {};
+    protected geoindex: _.Dictionary<Supercluster> = {};
 
   protected readonly namespace: string;
     protected readonly pointType: PointType;
 
-    protected UnsubscribeDateLocationReaction: IReactionDisposer;
+    // protected UnsubscribeDateLocationReaction: IReactionDisposer;
     protected UnsubscribeFetchJSONReaction: IReactionDisposer;
 
     constructor(namespace: string, pointType: PointType) {
 
         this.namespace = namespace;
         this.pointType = pointType;
-        const coordinateStore = getGlobalModel(namespace, MLocationMapCoordinates);
-        const dateStore: MTime = getGlobalModel(namespace, MTime);
+        // const coordinateStore = getGlobalModel(namespace, MLocationMapCoordinates);
+        // const dateStore: MTime = getGlobalModel(namespace, MTime);
         const taxaStore = getGlobalModel(namespace, MMapTaxa);
 
         this.UnsubscribeFetchJSONReaction = reaction(
@@ -60,54 +55,50 @@ export class MMapPoints {
             }
         );
 
-        this.UnsubscribeDateLocationReaction = reaction(
-            () => {
-                return {
-                        date: dateStore.DateString,
-                        isLoading: this.IsLoading, // Add to kick off each time new data has completed loading.
-                        latitude: coordinateStore.Latitude,
-                        longitude: coordinateStore.Longitude,
-                        radius: coordinateStore.Radius,
+    }
+
+    public GetAggregation(bbox: [number, number, number, number], zoom: number, date: string): [number, number] {
+
+        if (zoom === 0 || date.trim() === '') {
+            return [0, 0]
+        }
+
+        const forOccurrences = this.pointType === PointType.Occurrences;
+
+        if (!(this.geoindex.hasOwnProperty(date))) {
+            return [0, 0]
+        }
+
+        const points = this.geoindex[date].getClusters(bbox, zoom);
+
+        const pointCount = forOccurrences ?
+            points.length :
+            _.sumBy(
+                points,
+                (p: GeoJSON.Feature<GeoJSON.Point>) => {
+                    if (!p.properties) {
+                        return 0
                     }
-                },
-                (i) => this.setMapPoints(i),
-                {
-                    fireImmediately: false,
-                    name: `${pointType} Date Location Reaction`
-                },
-        );
+                    return p.properties.point_count || 1
+                });
+        const predictionSum = forOccurrences ?
+            0 :
+            _.sumBy(
+                points,
+                    (p: GeoJSON.Feature<GeoJSON.Point>) => {
+                        if (!p.properties) {
+                            return 0
+                        }
+                        return p.properties.predictionCount || 0
+            });
+
+        return [pointCount, predictionSum === 0 ? 0 : predictionSum / pointCount]
 
     }
 
-    public GetAggregation(latitude: number, longitude: number, radius: number, date: string): [number, number] {
+    public GetPoints(bbox: [number, number, number, number], zoom: number, date: string): Array<GeoJSON.Feature<GeoJSON.Point>> {
 
-        if (latitude === 0 || longitude === 0 || radius === 0 || date.trim() === '') {
-            return [0, 0]
-        }
-
-        if (!(this.geoindex.hasOwnProperty(date))) {
-            return [0, 0]
-        }
-
-        const points = geokdbush.around(
-            this.geoindex[date],
-            longitude,
-            latitude,
-            undefined,
-            radius,
-            // filterByDate,
-        );
-        const predMean = this.pointType === PointType.Predictions ?
-            (_.sumBy<TJSONResponsePoint>(points, (p: TJSONResponsePoint) => p[3]) / points.length) :
-            0;
-
-        return [points.length, predMean]
-
-    }
-
-    public GetPoints(latitude: number, longitude: number, radius: number, date: string): IMapPoint[] {
-
-        if (latitude === 0 || longitude === 0 || radius === 0 || date.trim() === '') {
+        if (zoom === 0 || date.trim() === '') {
             return []
         }
 
@@ -115,54 +106,32 @@ export class MMapPoints {
             return []
         }
 
-        return geokdbush.around(
-            this.geoindex[date],
-            longitude,
-            latitude,
-            undefined,
-            radius,
-            // filterByDate,
-        ).map((a: TJSONResponsePoint) => {
-            return {
-                date,
-                id: a.length === 5 ? a[4] : S2Cell.fromLatLng(S2LatLng.fromDegrees(a[1], a[2]).normalized()).id.toToken(),
-                latitude: a[1],
-                longitude: a[2],
-                pointType: this.pointType,
-                prediction: this.pointType === PointType.Predictions ? a[3] : undefined,
-            }
-        })
+        return this.geoindex[date].getClusters(bbox, zoom);
+
+        // return points.map((p: GeoJSON.Feature<GeoJSON.Point>) => {
+        //
+        //     if (!p.properties) {
+        //         throw Error(`Missing Properties`)
+        //     }
+        //
+        //     const lat = p.geometry.coordinates[1];
+        //     const lng = p.geometry.coordinates[0];
+        //
+        //     return {
+        //         date,
+        //         id: p.properties.id || S2Cell.fromLatLng(S2LatLng.fromDegrees(lat, lng)).id.parentL(16).toToken(),
+        //         latitude: lat,
+        //         longitude: lng,
+        //         pointType: this.pointType,
+        //         prediction: ((p.properties.predictionCount || 0) / (p.properties.point_count || 1)),
+        //     }
+        // })
     }
 
     protected dispose() {
-        this.UnsubscribeDateLocationReaction();
+        // this.UnsubscribeDateLocationReaction();
         this.UnsubscribeFetchJSONReaction();
     };
-
-    @action
-    protected setMapPoints(i?: {
-        date: string;
-        isLoading: boolean;
-        latitude: number;
-        longitude: number;
-        radius: number;
-    }) {
-        const go = !_.isNil(i)
-            && this.geoindex.hasOwnProperty(i.date)
-            && !i.isLoading
-            && i.latitude !== 0
-            && i.longitude !== 0
-            && i.radius !== 0
-            && i.date.length === 8;
-
-        if (!i || !go) {
-            this.MapPoints.clear();
-            return
-        }
-
-        this.MapPoints.replace(this.GetPoints(i.latitude, i.longitude, i.radius, i.date));
-    }
-
 
     @action
     protected setLoading(b: boolean) {
@@ -183,45 +152,38 @@ export class MMapPoints {
             return
         }
 
-        // getFirebaseStorageRef(this.namespace)
-        //     .ref(`${this.pointType.toLowerCase()}/${nameUsageId}.csv`)
-        //     .getDownloadURL()
-        //     .then((url) => {
-
-
         const mErrors = getGlobalModel(this.namespace, MErrors);
 
         Papa.parse(
             `https://floracast-map-data.storage.googleapis.com/${this.pointType.toLowerCase()}/${nameUsageId}.csv`,
             {
-            complete: (parseResults: {data: TJSONResponsePoint[], errors: Papa.ParseError[]}) => {
+            complete: (parseResults?: {data: TJSONResponsePoint[], errors?: Papa.ParseError[]}) => {
 
-                if (parseResults.errors.length > 0) {
+
+                if (!parseResults) {
+                    this.geoindex = {};
+                    this.setLoading(false);
+                    return
+                }
+
+                if (parseResults.errors && parseResults.errors.length > 0) {
                     parseResults.errors.forEach((err) => {
                         mErrors.Report(
                             err,
                             {'PointType': this.pointType, 'NameUsageId': nameUsageId},
                             `Could not parse csv line`);
                     });
+                    this.geoindex = {};
+                    this.setLoading(false);
                     return
                 }
 
-                // this.geoindex = _.flow(
-                //     _.groupBy(p => p[0].toString()),
-                //     _.mapValues((pts) => kdbush<TJSONResponsePoint>(
-                //             pts,
-                //             (a: TJSONResponsePoint) => a[2],
-                //             (a: TJSONResponsePoint) => a[1]
-                //         )
-                //     )(parseResults.data);
-
                 this.geoindex = _.chain(parseResults.data)
                     .groupBy((p) => p[0].toString())
-                    .mapValues((pts) => kdbush<TJSONResponsePoint>(
-                            pts,
-                            (a: TJSONResponsePoint) => a[2],
-                            (a: TJSONResponsePoint) => a[1]
-                    )).value();
+                    .mapValues((pts, d) => {
+                        return generateSuperCluster(pts, this.pointType)
+                    })
+                    .value();
 
                 this.setLoading(false);
             },
@@ -238,38 +200,11 @@ export class MMapPoints {
             },
             fastMode: true,
             header: false,
-            // chunk: (parseResults: {data: TJSONResponsePoint[], errors: Papa.ParseError[]}, parser: Papa.Parser) => {
-            //
-            //     if (parseResults.errors.length > 0) {
-            //         parseResults.errors.forEach((err) => {
-            //             mErrors.Report(
-            //                 err,
-            //                 {'PointType': this.pointType, 'NameUsageId': nameUsageId},
-            //                 `Could not parse csv line`);
-            //         });
-            //         parser.abort();
-            //         return
-            //     }
-            //
-            //     res.push(...parseResults.data.map((a: TJSONResponsePoint) => {
-            //         return {
-            //             date: a[0].toString(),
-            //             id: a.length === 5 ? a[4] : S2Cell.fromLatLng(S2LatLng.fromDegrees(a[1], a[2]).normalized()).id.toToken(),
-            //             latitude: a[1],
-            //             longitude: a[2],
-            //             pointType: this.pointType,
-            //             prediction: this.pointType === PointType.Predictions ? a[3] : undefined,
-            //         }
-            //     }));
-            //
-            // },
-            // withCredentials: true,
+            skipEmptyLines: true,
             worker: true,
         });
 
     }
-
-
 }
 
 export class MMapOccurrences extends MMapPoints {
@@ -284,73 +219,64 @@ export class MMapPredictions extends MMapPoints {
     }
 }
 
-// interface IGeoJSONFeatureProperties{
-//     id?: string;
-//     pointType: PointType;
-//     predictionCount?: number;
-//     date?: string;
-//     point_count?: number; // Built into SuperCluster.
-// }
-//
-// function generateSuperCluster(data: StorageDataPoint[], pointType: PointType): Supercluster {
-//     const forOccurrences = pointType === PointType.Occurrences;
-//
-//     const mapper = (properties: IGeoJSONFeatureProperties ) => {
-//
-//         const p: IGeoJSONFeatureProperties = {
-//             id: properties.id,
-//             pointType: forOccurrences ? PointType.Occurrences : PointType.Predictions
-//         };
-//
-//         if (forOccurrences) {
-//             p.date = properties.date;
-//         } else {
-//             p.predictionCount = properties.predictionCount;
-//         }
-//
-//         return p
-//
-//     };
-//
-//     const reducer = forOccurrences ? undefined : (accumulated: IGeoJSONFeatureProperties, props: IGeoJSONFeatureProperties) => {
-//         accumulated.predictionCount = (accumulated.predictionCount || 0) + (props.predictionCount || 0);
-//         return accumulated
-//     };
-//
-//     const sc = supercluster({
-//         extent: 256,
-//         initial: () => ({pointType}),
-//         map: mapper,
-//         minZoom: 6,
-//         radius: forOccurrences ? 1 : 128,
-//         reduce: reducer,
-//     });
-//     sc.load(data.map((a: StorageDataPoint) => {
-//         const ll = S2CellId.fromToken(a[0]).toLatLng();
-//
-//         const properties: IGeoJSONFeatureProperties = {
-//             id: a[0],
-//             pointType: forOccurrences ? PointType.Occurrences : PointType.Predictions
-//         };
-//
-//         if (a.length === 2) {
-//             properties.predictionCount = a[1]
-//         }
-//
-//         if (a.length === 3) {
-//             properties.id = a[2];
-//             properties.date = a[1];
-//         }
-//
-//         const v: GeoJSON.Feature<GeoJSON.Point> = {
-//             geometry: {
-//                 coordinates: [ll.lngDegrees.toNumber(), ll.latDegrees.toNumber()],
-//                 type: 'Point',
-//             },
-//             properties,
-//             type: 'Feature'
-//         };
-//         return v
-//     }));
-//     return sc;
-// }
+interface IGeoJSONFeatureProperties{
+    occurrenceId?: string;
+    // pointType: PointType;
+    predictionCount?: number;
+    date?: string;
+    point_count?: number; // Built into SuperCluster.
+    cluster_id?: number;
+}
+
+function generateSuperCluster(data: TJSONResponsePoint[], pointType: PointType): Supercluster {
+    const forOccurrences = pointType === PointType.Occurrences;
+
+    const mapper = (properties: IGeoJSONFeatureProperties ) => {
+
+        const p: IGeoJSONFeatureProperties = {};
+
+        if (forOccurrences) {
+            p.occurrenceId = properties.occurrenceId;
+            p.date = properties.date;
+        } else {
+            p.predictionCount = properties.predictionCount;
+        }
+
+        return p
+
+    };
+
+    const reducer = forOccurrences ? undefined : (accumulated: IGeoJSONFeatureProperties, props: IGeoJSONFeatureProperties) => {
+        accumulated.predictionCount = (accumulated.predictionCount || 0) + (props.predictionCount || 0);
+        return accumulated
+    };
+
+    const sc = supercluster({
+        extent: TileSize,
+        map: mapper,
+        maxZoom: 8,
+        minZoom: ZoomMinimum,
+        radius: 20,
+        reduce: reducer,
+    });
+    sc.load(data.map((a: TJSONResponsePoint) => {
+
+        const properties: IGeoJSONFeatureProperties = {
+            date: forOccurrences ? a[0].toString() : undefined,
+            occurrenceId: forOccurrences && a.length === 5 ? a[4] : undefined,
+            predictionCount: forOccurrences ? undefined : a[3],
+            // Note that generating the s2token here is very slow.
+        };
+
+        const v: GeoJSON.Feature<GeoJSON.Point> = {
+            geometry: {
+                coordinates: [a[2], a[1]],
+                type: 'Point',
+            },
+            properties,
+            type: 'Feature'
+        };
+        return v
+    }));
+    return sc;
+}

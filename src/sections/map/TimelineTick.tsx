@@ -1,24 +1,23 @@
 // import TimelineTickPopper from './Poppers/TimelineTickPopper';
 import * as classNames from 'classnames';
-import { observer } from 'mobx-react';
 import * as React from 'react';
 import {MTime} from "../../stores/date";
 import {getGlobalModel} from "../../stores/globals";
 import { ITickMark } from '../../stores/timeline';
 import './TimelineTick.css';
 
-const maxCircleRadius = 100;
-const minCircleRadius = 20;
+const maxCircleRadius = 61.8;
+const minCircleRadius = 38.2;
 
 interface ITickProps {
   mark: ITickMark;
+  selected?: boolean;
 }
 
 interface ITickState {
   hover: boolean;
 }
 
-@observer
 export default class TimelineTick extends React.Component<
   ITickProps,
   ITickState
@@ -47,11 +46,25 @@ export default class TimelineTick extends React.Component<
   public render() {
     const { mark } = this.props;
 
+
+
     const isBeginningOfMonth = mark.moment.date() <= 7;
     // const isBeginningOfYear = mark.moment.month() === 0 && isBeginningOfMonth;
 
-    const radius = mark.scaledPointCount ? maxCircleRadius * mark.scaledPointCount : minCircleRadius;
-    const opacity = (mark.scaledPredictionMean || 0) * 0.9;
+    const radius = mark.scaledPointCount ?
+        ((maxCircleRadius * mark.scaledPointCount) + minCircleRadius) :
+        minCircleRadius;
+    let opacity = (mark.scaledPredictionMean || 0) * 0.8;
+    const fill = mark.fill;
+
+    const isActive = this.state.hover || this.props.selected;
+
+    if (isActive && opacity === 0) {
+      opacity = 0.5
+    }
+
+
+
 
       return (
       <div
@@ -80,17 +93,17 @@ export default class TimelineTick extends React.Component<
               stroke="#777"
               strokeWidth={isBeginningOfMonth ? 3 : 1}
             />
-            {this.state.hover && (
+            {isActive && (
               <circle
                 cx="100"
                 cy="100"
                 r={radius}
                 opacity={opacity}
                 className="tick-keyframe-two"
-                fill={mark.fill}
+                fill={fill}
               />
             )}
-            {this.state.hover && (
+            {isActive && (
               <circle
                 cx="100"
                 cy="100"
@@ -98,7 +111,7 @@ export default class TimelineTick extends React.Component<
                 opacity={opacity}
                 className="tick-keyframe-one"
                 strokeWidth={1}
-                stroke={mark.fill}
+                stroke={fill}
                 fill="transparent"
               />
             )}
@@ -107,13 +120,13 @@ export default class TimelineTick extends React.Component<
               cx="100"
               cy="100"
               className={classNames({
-                'tick-keyframe-three': this.state.hover,
+                'tick-keyframe-three': isActive,
               })}
               r={radius}
               opacity={opacity}
-              fill={mark.fill}
+              fill={fill}
             >
-              {this.state.hover && (
+              {isActive && (
                 <animate
                   attributeName="r"
                   begin="0s"

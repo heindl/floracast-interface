@@ -1,12 +1,14 @@
 /* tslint:disable:max-classes-per-file */
+import {bounds} from "@mapbox/geo-viewport";
 import * as Leaflet from "leaflet";
 import { observer } from 'mobx-react';
 import * as React from 'react';
 import * as ReactLeaflet from 'react-leaflet';
 import Icon from '../../iconography/Icon';
 import {Minus, Navigate, Plus} from '../../iconography/Icons';
+import {MTime} from "../../stores/date";
 import {getGlobalModel} from "../../stores/globals";
-import MLocationMapCoordinates from "../../stores/location/map";
+import MLocationMapCoordinates, {TileSize} from "../../stores/location/map";
 import {MMapOccurrences, MMapPredictions} from '../../stores/points';
 import {MView, PointType} from "../../stores/view";
 // Copy css from https://unpkg.com/leaflet@1.3.1.css
@@ -19,24 +21,46 @@ import PointMarker from './PointMarker';
 @observer
 class PredictionFeatureGroup extends React.Component {
     public render() {
-        const mapPoints = getGlobalModel('default', MMapPredictions).MapPoints;
+        const mPredictions = getGlobalModel('default', MMapPredictions);
         const mView = getGlobalModel('default', MView);
-        const zoom = getGlobalModel('default', MLocationMapCoordinates).Zoom;
+        const dateString = getGlobalModel('default', MTime).DateString;
+        const mCoords = getGlobalModel('default', MLocationMapCoordinates);
 
         if (mView.PointType !== PointType.Predictions) {
             return null
         }
 
+        const b = bounds([mCoords.Longitude, mCoords.Latitude], mCoords.Zoom, mCoords.ViewPort, TileSize);
+
+        let points: Array<GeoJSON.Feature<GeoJSON.Point>> = [];
+        if (!mPredictions.IsLoading) {
+            points = mPredictions.GetPoints(b, mCoords.Zoom, dateString)
+        }
+
         return (
             <ReactLeaflet.FeatureGroup>
-                {mapPoints.map((point) => {
+                {points.map((point) => {
+                    if (!point.properties) {
+                        return null
+                    }
+
+                    const id = JSON.stringify(point.geometry.coordinates, (key, val) => {
+                        return val.toFixed ? Number(val.toFixed(4)) : val;
+                    });
                     return (
                         <PointMarker
-                            key={point.id}
+                            id={id}
+                            key={id}
                             point={point}
-                            isHovered={mView.HoveredMapDivIcon === point.id}
-                            tooltipSelected={mView.ProtectedAreaToken === point.id}
-                            zoom={zoom}
+                            isHovered={
+                                mView.HoveredMapDivIcon !== '' &&
+                                mView.HoveredMapDivIcon === id
+                            }
+                            tooltipSelected={
+                                mView.ProtectedAreaToken !== '' &&
+                                mView.ProtectedAreaToken === id
+                            }
+                            zoom={mCoords.Zoom}
                         />
                     );
                 })}
@@ -50,20 +74,34 @@ class OccurrenceFeatureGroup extends React.Component {
 
     public render() {
 
+        const mPredictions = getGlobalModel('default', MMapOccurrences);
         const mView = getGlobalModel('default', MView);
-        const mapPoints = getGlobalModel('default', MMapOccurrences).MapPoints;
+        const dateString = getGlobalModel('default', MTime).DateString;
+        const mCoords = getGlobalModel('default', MLocationMapCoordinates);
 
         if (mView.PointType !== PointType.Occurrences) {
             return null
         }
 
+        const b = bounds([mCoords.Longitude, mCoords.Latitude], mCoords.Zoom, mCoords.ViewPort, TileSize);
+
+        let points: Array<GeoJSON.Feature<GeoJSON.Point>> = [];
+        if (!mPredictions.IsLoading) {
+            points = mPredictions.GetPoints(b, mCoords.Zoom, dateString)
+        }
+
         return (
             <ReactLeaflet.FeatureGroup>
-                {mapPoints.map((point) => {
+                {points.map((point) => {
+
+                    if (!point.properties) {
+                        return null
+                    }
+
                     return (
                         <ReactLeaflet.CircleMarker
-                            key={point.id}
-                            center={[point.latitude, point.longitude]}
+                            key={point.properties.occurrenceId}
+                            center={[point.geometry.coordinates[1], point.geometry.coordinates[0],]}
                             radius={10}
                             fill={true}
                             fillColor={'rgba(213, 55, 106,1)'}
@@ -164,11 +202,11 @@ export default class PointMap extends React.Component<
 
   protected handleMapMove = (e: Leaflet.LeafletEvent) => {
       const mCoords = getGlobalModel('default', MLocationMapCoordinates);
-      mCoords.SetCoordinates(
+      mCoords.MoveMap(
           e.target.getCenter().lat,
-          e.target.getCenter().lng
+          e.target.getCenter().lng,
+          e.target.getZoom(),
       );
-      mCoords.SetZoom(e.target.getZoom())
   }
 }
 

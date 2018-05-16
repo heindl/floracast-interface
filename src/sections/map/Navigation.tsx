@@ -4,6 +4,7 @@ import * as React from 'react';
 import { Link } from 'react-router-dom';
 import Icon from '../../iconography/Icon';
 import { SeedOfLife } from '../../iconography/Icons';
+import {MTime} from "../../stores/date";
 import {getGlobalModel} from "../../stores/globals";
 import {MMapTaxa} from '../../stores/taxa';
 import {MMapOccurrenceTimeline, MMapPredictionTimeline} from '../../stores/timeline';
@@ -19,6 +20,7 @@ class Timeline extends React.Component {
     public render() {
 
         const mView = getGlobalModel('default', MView);
+        const mDate = getGlobalModel('default', MTime);
         if (!mView.TimelineIsVisible) {
             return null
         }
@@ -28,9 +30,13 @@ class Timeline extends React.Component {
             getGlobalModel('default', MMapOccurrenceTimeline).TickMarks;
         return (
             <div id="timeline">
-                {tickMarks.map((mark, i) => {
-                    return <Tick key={mark.moment.unix()} mark={mark} />;
-                })}
+                {tickMarks.map((mark, i) =>
+                    <Tick
+                        key={mark.moment.unix()}
+                        mark={mark}
+                        selected={mark.moment.format("YYYYMMDD") === mDate.DateString}
+                    />
+                )}
             </div>
         )
     }

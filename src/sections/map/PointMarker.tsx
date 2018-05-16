@@ -7,7 +7,6 @@ import {renderToString} from 'react-dom/server';
 import * as ReactLeaflet from 'react-leaflet';
 import {getGlobalModel} from "../../stores/globals";
 import MLocationMapCoordinates from "../../stores/location/map";
-import {IMapPoint} from "../../stores/points";
 import {GetColor} from "../../stores/timeline";
 import { MView } from '../../stores/view';
 import './PointMarker.css';
@@ -17,7 +16,7 @@ import ProtectedAreaTooltip from "./ProtectedAreaTooltip";
 interface IPredictionDivIconProps {
     prediction: number;
     radius: number;
-    clusterCount: number,
+    // clusterCount: number,
     hovered: boolean;
 }
 
@@ -32,22 +31,26 @@ class PredictionDivIcon extends React.Component<IPredictionDivIconProps> {
 
     public render() {
 
-        const overlayEngaged = this.props.clusterCount > 1 && this.props.hovered;
+        // const overlayEngaged = this.props.clusterCount > 1 && this.props.hovered;
 
-        const minRadiusForOverlay = 58;
+        // const minRadiusForOverlay = 58;
 
-        const radius = overlayEngaged && minRadiusForOverlay > this.props.radius ? minRadiusForOverlay : this.props.radius;
+        // const radius = overlayEngaged && minRadiusForOverlay > this.props.radius ? minRadiusForOverlay : this.props.radius;
+
+        const radius = this.props.radius;
 
         const translate = (radius) - 6;
 
-        const opacityMultiplier = overlayEngaged ? 1 : 0.9;
+        // const opacityMultiplier = overlayEngaged ? 1 : 0.9;
+        const opacityMultiplier = 0.9;
 
         return (
 
             <div
                 className={classNames({
                     "prediction-marker": true,
-                    "prediction-marker-pulse": (this.props.hovered && this.props.clusterCount === 1),
+                    // "prediction-marker-pulse": (this.props.hovered && this.props.clusterCount === 1),
+                    "prediction-marker-pulse": this.props.hovered,
                 })}
                 style={{
                     height: radius * 2,
@@ -69,14 +72,14 @@ class PredictionDivIcon extends React.Component<IPredictionDivIconProps> {
                         opacity: this.props.prediction * opacityMultiplier,
                         width: radius * 2,
                     }}>
-                    {overlayEngaged &&
-                    <div className="prediction-marker-cluster-overlay">
-                        <h3>{this.props.clusterCount}</h3>
-                        <h5>Areas</h5>
-                        <h3>{Math.round(this.props.prediction * 100)}%</h3>
-                        <h5>Confidence</h5>
-                    </div>
-                    }
+                    {/*{overlayEngaged &&*/}
+                    {/*<div className="prediction-marker-cluster-overlay">*/}
+                        {/*<h3>{this.props.clusterCount}</h3>*/}
+                        {/*<h5>Areas</h5>*/}
+                        {/*<h3>{Math.round(this.props.prediction * 100)}%</h3>*/}
+                        {/*<h5>Confidence</h5>*/}
+                    {/*</div>*/}
+                    {/*}*/}
                 </div>
 
 
@@ -87,10 +90,11 @@ class PredictionDivIcon extends React.Component<IPredictionDivIconProps> {
 }
 
 interface IPointMarkerProps {
-  point: IMapPoint;
-  zoom: number;
+    id: string,
     isHovered: boolean;
+  point: GeoJSON.Feature<GeoJSON.Point>;
     tooltipSelected: boolean;
+    zoom: number;
 }
 
 @observer
@@ -104,13 +108,22 @@ export default class PointMarker extends React.Component<
 
   public render() {
 
-    // const clusterCount = (properties.point_count || 1);
-      const clusterCount = 1;
-    // const prediction = (properties.predictionCount || 0) / clusterCount;
-      const prediction = this.props.point.prediction || 0;
+        const {properties} = this.props.point;
+        if (!properties) {
+            return null
+        }
+
+    const clusterCount = (properties.point_count || 1);
+      // const clusterCount = 1;
+    const prediction = (properties.predictionCount || 0) / clusterCount;
+      // const prediction = properties.predictionCount || 0;
 
     // const radius =  (prediction * (Math.sqrt(clusterCount) * (this.props.zoom * 1.5)));
-    const radius = (prediction * prediction  * Math.sqrt(clusterCount)) * (this.props.zoom * 4);
+    // const radius = (prediction * prediction  * Math.sqrt(clusterCount)) * (this.props.zoom * 4);
+      const radius = (prediction * prediction  * Math.sqrt(1)) * (this.props.zoom * 4);
+
+      const lat = this.props.point.geometry.coordinates[1];
+      const lng = this.props.point.geometry.coordinates[0];
 
     return (
       <ReactLeaflet.Marker
@@ -121,22 +134,21 @@ export default class PointMarker extends React.Component<
               <PredictionDivIcon
                   prediction={prediction}
                   radius={radius}
-                  clusterCount={clusterCount}
+                  // clusterCount={clusterCount}
                   hovered={this.props.isHovered}
               />
           ),
         })}
         onMouseOver={this.toggleHover}
         onMouseOut={this.toggleHover}
-        position={{lat: this.props.point.latitude, lng: this.props.point.longitude}}
+        position={{lat, lng}}
         onClick={this.handleClick}
       >
-          {(clusterCount === 1 && this.props.tooltipSelected) &&
+          {this.props.tooltipSelected &&
             <ProtectedAreaTooltip
-                latitude={this.props.point.latitude}
-                longitude={this.props.point.longitude}
+                latitude={lat}
+                longitude={lng}
                 prediction={prediction}
-                token={this.props.point.id}
             />
           }
       </ReactLeaflet.Marker>
@@ -144,14 +156,20 @@ export default class PointMarker extends React.Component<
   }
 
   protected handleClick = (e: Event) => {
-      if (this.props.point.id) {
-          getGlobalModel('default', MView).SetProtectedAreaToken(this.props.point.id)
+      const mCoords = getGlobalModel('default', MLocationMapCoordinates);
+      const {properties} = this.props.point;
+
+      if (properties && !properties.point_count) {
+          getGlobalModel('default', MView).SetProtectedAreaToken(this.props.id);
       } else {
-          getGlobalModel('default', MLocationMapCoordinates).IncrementZoom(1);
+          const zoom = this.props.zoom + 1;
+          const lat = this.props.point.geometry.coordinates[1];
+          const lng = this.props.point.geometry.coordinates[0];
+          mCoords.MoveMap(lat, lng, zoom);
       }
   };
 
   protected toggleHover = () => {
-     getGlobalModel('default', MView).SetHoveredMapDivIcon(this.props.isHovered ? this.props.point.id : '')
+     getGlobalModel('default', MView).SetHoveredMapDivIcon(this.props.id)
   };
 }

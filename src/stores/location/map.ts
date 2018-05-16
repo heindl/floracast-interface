@@ -6,12 +6,12 @@ import {getGlobalModel} from "../globals";
 import {MRouter} from "../router";
 import MLocationUserCoordinates from "./coordinate";
 
-export const ZoomMinimum = 1;
+export const ZoomMinimum = 4;
 export const ZoomDefault = 9;
 
-const TileSize = 256;
+export const TileSize = 256;
 
-export default class MLocationMapCoordinates extends MLocationUserCoordinates{
+export default class MLocationMapCoordinates extends MLocationUserCoordinates {
 
     @observable
     public Zoom: number = ZoomDefault;
@@ -46,12 +46,12 @@ export default class MLocationMapCoordinates extends MLocationUserCoordinates{
 
     }
 
-    public IncrementZoom(amount: number){
+    public IncrementZoom(amount: number) {
         this.SetZoom(this.Zoom + amount);
     }
 
     @action
-    public SetZoom(amount: number){
+    public SetZoom(amount: number) {
         if (amount < ZoomMinimum) {
             amount = ZoomMinimum
         }
@@ -62,6 +62,21 @@ export default class MLocationMapCoordinates extends MLocationUserCoordinates{
         getGlobalModel(this.namespace, MRouter).UpdateCurrentPath({
             zoom: amount
         })
+    }
+
+    @action
+    public MoveMap(lat: number, lng: number, zoom: number) {
+        lat = parseFloat(lat.toPrecision(8));
+        lng = parseFloat(lng.toPrecision(8));
+        if (zoom < ZoomMinimum) {
+            zoom = ZoomMinimum
+        }
+        if (lat === this.Latitude && lng === this.Longitude && zoom === this.Zoom) {
+            return
+        }
+        this.Zoom = zoom;
+        this.Latitude = lat;
+        this.Longitude = lng;
     }
 
 

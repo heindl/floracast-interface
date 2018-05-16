@@ -1,4 +1,5 @@
 /* tslint:disable:max-classes-per-file */
+import {bounds} from "@mapbox/geo-viewport";
 import * as d3Scale from 'd3-scale';
 import { interpolateSpectral } from 'd3-scale-chromatic';
 import * as _ from 'lodash';
@@ -6,7 +7,7 @@ import {action, IReactionDisposer, observable, reaction} from 'mobx';
 import * as moment from 'moment';
 import {MTime} from "./date";
 import {getGlobalModel} from "./globals";
-import MLocationMapCoordinates from "./location/map";
+import MLocationMapCoordinates, {TileSize} from "./location/map";
 import {MMapOccurrences, MMapPoints, MMapPredictions} from "./points";
 import {PointType} from './view';
 
@@ -33,6 +34,7 @@ interface IReactionData{
     longitude: number,
     radius: number,
     viewPort: [number, number],
+    zoom: number,
 }
 
 export class MMapTimeline {
@@ -66,6 +68,7 @@ export class MMapTimeline {
               longitude: coordStore.Longitude,
               radius: coordStore.Radius,
               viewPort: coordStore.ViewPort,
+              zoom: coordStore.Zoom,
           }),
           (o) => this.setMarks(o),
                   {
@@ -81,7 +84,7 @@ export class MMapTimeline {
           this.TickMarks.replace([]);
           return
       }
-      const marks = this.scaledMarks(i.latitude, i.longitude, i.radius, i.viewPort);
+      const marks = this.scaledMarks(i.latitude, i.longitude, i.radius, i.viewPort, i.zoom);
       this.TickMarks.replace(marks)
   }
 
@@ -140,14 +143,17 @@ export class MMapTimeline {
 
     }
 
-    protected marks(latitude: number, longitude: number, radius: number, viewPort: [number, number]): ITickMark[] {
+    protected marks(latitude: number, longitude: number, radius: number, viewPort: [number, number], zoom: number): ITickMark[] {
+
+
+        const bbox = bounds([longitude, latitude], zoom, viewPort, TileSize);
 
         const mPredictions: MMapPoints = getGlobalModel(this.namespace, MMapPredictions);
         const scale = this.scale(viewPort);
         const fmt = this.pointType === PointType.Occurrences ? 'MM' : 'YYYYMMDD';
 
         return this.dates().map((m: moment.Moment) => {
-            const aggr = mPredictions.GetAggregation(latitude, longitude, radius, m.format(fmt));
+            const aggr = mPredictions.GetAggregation(bbox, zoom, m.format(fmt));
 
             const mark: ITickMark = {
                 moment: m,
@@ -168,8 +174,8 @@ export class MMapTimeline {
 
     }
 
-    protected scaledMarks(latitude: number, longitude: number, radius: number, viewPort: [number, number]): ITickMark[] {
-      const marks = this.marks(latitude, longitude, radius, viewPort);
+    protected scaledMarks(latitude: number, longitude: number, radius: number, viewPort: [number, number], zoom: number): ITickMark[] {
+      const marks = this.marks(latitude, longitude, radius, viewPort, zoom);
 
         // TODO: For this to be correct, would be much better to get an initial max of all days everywhere.
         // As it is, the numbers will get larger as you zoom.
