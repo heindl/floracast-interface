@@ -80,6 +80,7 @@ export class MMapPoints {
     }
 
     public GetAggregation(latitude: number, longitude: number, radius: number, date: string): [number, number] {
+
         if (latitude === 0 || longitude === 0 || radius === 0 || date.trim() === '') {
             return [0, 0]
         }
@@ -88,21 +89,13 @@ export class MMapPoints {
             return [0, 0]
         }
 
-        const filterByDate = (v: TJSONResponsePoint) => {
-            if (date.length === 2) {
-                // Assume to be month.
-                return v[0].toString().substr(4, 2) === date;
-            }
-            return v[0].toString() === date;
-        };
-
         const points = geokdbush.around(
             this.geoindex[date],
             longitude,
             latitude,
             undefined,
             radius,
-            filterByDate,
+            // filterByDate,
         );
         const predMean = this.pointType === PointType.Predictions ?
             (_.sumBy<TJSONResponsePoint>(points, (p: TJSONResponsePoint) => p[3]) / points.length) :
@@ -122,21 +115,13 @@ export class MMapPoints {
             return []
         }
 
-        const filterByDate = (v: TJSONResponsePoint) => {
-            if (date.length === 2) {
-                // Assume to be month.
-                return v[0].toString().substr(4, 2) === date;
-            }
-            return v[0].toString() === date;
-        };
-
         return geokdbush.around(
             this.geoindex[date],
             longitude,
             latitude,
             undefined,
             radius,
-            filterByDate,
+            // filterByDate,
         ).map((a: TJSONResponsePoint) => {
             return {
                 date,

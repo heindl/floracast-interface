@@ -96,8 +96,6 @@ export default class PointMap extends React.Component<
   public render() {
 
       const mCoords = getGlobalModel('default', MLocationMapCoordinates);
-
-    console.log("Creating Map", mCoords.Latitude, mCoords.Longitude, mCoords.Zoom)
     return (
       <ReactLeaflet.Map
         whenReady={this.handleMapReady}

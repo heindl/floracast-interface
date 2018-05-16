@@ -138,9 +138,6 @@ class TaxaStore {
 
   protected fetchTaxa(i: ITaxaFetchData){
 
-
-        console.log("fetching taxa", i)
-
       const go = !_.isEmpty(i.lat)
           && !_.isEmpty(i.lng)
           && !_.isEmpty(i.pointType)
@@ -169,8 +166,6 @@ class TaxaStore {
       if (i.pointType === PointType.Predictions) {
         FetchPredictionTaxa(getFireStoreRef(this.namespace), i.covering, [i.lat, i.lng], i.date)
           .then((res: IPredictionResponse[]) => {
-
-              console.log("Taxa Response", res)
             this.setPredictionTaxa(res);
           })
           .catch((err) => {

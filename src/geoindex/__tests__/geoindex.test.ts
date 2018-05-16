@@ -30,8 +30,6 @@ it('computes a GeoHash covering from a bounding box', async () => {
     '20170327'
   );
 
-  console.log(taxa);
-
   // expect(taxa.length).toEqual(2);
   // expect(taxa).toContain('Io1ftGL');
   // expect(taxa).toContain('sbjeYTj');

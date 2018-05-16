@@ -92,8 +92,6 @@ function updateMatchParams(oParams: IPathMatchParams, nParams: IPathMatchParams)
         zoom: 9,
     }, parseCoordinates(nParams.coordinates || ''));
 
-    console.log("updating path", coords, oParams.coordinates, nParams.coordinates)
-
     if (
         coords.lng
         && coords.lat

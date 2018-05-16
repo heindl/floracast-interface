@@ -55,7 +55,6 @@ export default class MLocationUserCoordinates {
         if (lat === this.Latitude && lng === this.Longitude) {
             return;
         }
-        console.log("Setting Lat/Lng", lat, lng)
         this.Latitude = lat;
         this.Longitude = lng;
         getGlobalModel(this.namespace, MRouter).UpdateCurrentPath({lat, lng})

@@ -81,7 +81,8 @@ export class MMapTimeline {
           this.TickMarks.replace([]);
           return
       }
-      this.TickMarks.replace(this.scaledMarks(i.latitude, i.longitude, i.radius, i.viewPort))
+      const marks = this.scaledMarks(i.latitude, i.longitude, i.radius, i.viewPort);
+      this.TickMarks.replace(marks)
   }
 
   protected scale(viewPort: [number, number]): d3Scale.ScaleTime<number, number> {

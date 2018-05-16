@@ -44,7 +44,8 @@ export class MTime {
 
   constructor(namespace: string) {
       this.namespace = namespace;
-      this.today = toStandardDay(moment(), 0);
+      // this.today = toStandardDay(moment(), 0);
+      this.today = moment().isoWeekday(5);
       this.PredictionDateRange = [
           this.today.clone().subtract(52, 'weeks'),
           this.today.clone(),

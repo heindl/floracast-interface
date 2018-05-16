@@ -1,7 +1,7 @@
 /*! eslint-disable import/first */
 
 import { configure } from 'mobx';
-import {enableLogging} from 'mobx-logger';
+// import {enableLogging} from 'mobx-logger';
 import * as React from 'react';
 import { asyncComponent } from 'react-async-component';
 import * as ReactDOM from 'react-dom';
@@ -12,7 +12,7 @@ import registerServiceWorker from './registerServiceWorker';
 import {getGlobalModel} from "./stores/globals";
 import {MRouter} from "./stores/router";
 
-enableLogging();
+// enableLogging();
 
 const trackingId = process.env.REACT_APP_GA_TRACKING_ID;
 if (trackingId) {

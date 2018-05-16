@@ -6,7 +6,7 @@ import {getGlobalModel} from "../globals";
 import {MRouter} from "../router";
 import MLocationUserCoordinates from "./coordinate";
 
-export const ZoomMinimum = 6;
+export const ZoomMinimum = 1;
 export const ZoomDefault = 9;
 
 const TileSize = 256;
@@ -59,7 +59,9 @@ export default class MLocationMapCoordinates extends MLocationUserCoordinates{
             return
         }
         this.Zoom = amount;
-        getGlobalModel(this.namespace, MRouter).UpdateCurrentPath({zoom: amount})
+        getGlobalModel(this.namespace, MRouter).UpdateCurrentPath({
+            zoom: amount
+        })
     }
 
 
@@ -73,8 +75,6 @@ export default class MLocationMapCoordinates extends MLocationUserCoordinates{
         zoom: number;
         viewPort: [number, number];
     }) {
-
-        console.log("radius reaction", i.lat, i.lng, i.zoom, i.viewPort)
         const b = bounds([i.lng, i.lat], i.zoom, i.viewPort, TileSize);
         // return new Bounds({
         //   e: b[2],

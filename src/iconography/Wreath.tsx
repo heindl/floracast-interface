@@ -127,8 +127,6 @@ export default class Wreath extends React.Component<IWreathProps, IWreathState> 
 
     protected startTimer = () => {
 
-        console.log("STARTING TIMER")
-
         if (this.state.timerHasStarted) {
             return
         }
