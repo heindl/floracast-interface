@@ -36,7 +36,7 @@ export default class TaxonCard extends React.Component {
           activeColor="#000"
           height={'15px'}
           width={'15px'}
-          onClick={mView.HideTaxonCard}
+          onClick={this.hideTaxonCard}
         />
         <div className="map-taxon-card-media">
           <img src={taxon.PhotoURL} />
@@ -56,6 +56,10 @@ export default class TaxonCard extends React.Component {
         </div>
       </div>
     );
+  }
+
+  protected hideTaxonCard = () => {
+      getGlobalModel('default', MView).HideTaxonCard();
   }
 
 }

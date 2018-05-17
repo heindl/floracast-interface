@@ -1,6 +1,6 @@
 import {DocumentSnapshot} from "@firebase/firestore-types";
 import {action, observable} from 'mobx';
-import { S2CellId } from 'nodes2ts';
+import {S2Cell, S2LatLng} from 'nodes2ts';
 import MErrors from './errors';
 import {getFireStoreRef} from './firestore';
 import {getGlobalModel} from "./globals";
@@ -9,7 +9,7 @@ export default class ProtectedArea {
 
     public readonly Latitude: number;
     public readonly Longitude: number;
-    public readonly TokenID: string;
+
 
     @observable public AccessLevel: number = 0;
     @observable public Designation: string = '';
@@ -23,19 +23,15 @@ export default class ProtectedArea {
     @observable public DistanceKilometers: number = 0;
 
     protected readonly namespace: string;
+    protected fetched?: boolean;
     // protected mCoords: CoordinateStore;
 
     // protected unsubscribeDistance: IReactionDisposer;
 
-    constructor(idToken: string, namespace: string) {
+    constructor(namespace: string, lat: number, lng: number) {
         this.namespace = namespace;
-        this.TokenID = idToken;
-        // this.mCoords = getCoordinateStore(namespace);
-
-        const coords = S2CellId.fromToken(idToken).toLatLng();
-
-        this.Latitude = coords.latDegrees.toNumber();
-        this.Longitude = coords.lngDegrees.toNumber();
+        this.Latitude = lat;
+        this.Longitude = lng;
 
         // this.unsubscribeDistance = autorun(() => {
         //   this.setDistanceKilometers(haversine(
@@ -50,7 +46,21 @@ export default class ProtectedArea {
 
     }
 
+    public IndexKey(): string {
+        return JSON.stringify([this.Longitude, this.Latitude], (key, val) => {
+            return val.toFixed ? Number(val.toFixed(4)) : val;
+        });
+    }
+
     public Hydrate() {
+
+        if (this.fetched) {
+            return
+        }
+
+        const token = S2Cell.fromLatLng(
+            S2LatLng.fromDegrees(this.Latitude, this.Longitude)
+        ).id.parentL(16).toToken();
 
         if (this.Name && this.Name !== '') {
             return
@@ -60,15 +70,17 @@ export default class ProtectedArea {
 
         getFireStoreRef(this.namespace)
             .collection('ProtectedAreas')
-            .doc(this.TokenID)
+            .doc(token)
             .get()
             .then((doc) => {
                 this.SetProtectedAreaData(doc);
                 this.SetLoading(false);
+                this.fetched = true;
             })
             .catch((err) => {
                 getGlobalModel(this.namespace, MErrors).Report(err);
                 this.SetLoading(false);
+                this.fetched = true;
             });
     }
 

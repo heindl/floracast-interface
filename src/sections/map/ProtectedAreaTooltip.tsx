@@ -1,5 +1,4 @@
 import {observer} from "mobx-react";
-import {S2Cell, S2LatLng} from "nodes2ts";
 import * as React from 'react';
 import * as ReactLeaflet from 'react-leaflet';
 import ConfidenceScale from "../../iconography/ConfidenceScale";
@@ -87,13 +86,7 @@ export default class ProtectedAreaTooltip extends React.Component<
     protected onOpen = () => {
 
         if (!this.state.area) {
-
-            const token = S2Cell.fromLatLng(S2LatLng.fromDegrees(
-                this.props.latitude,
-                this.props.longitude,
-            )).id.parentL(16).toToken();
-
-            const a = new ProtectedArea(token, 'default');
+            const a = new ProtectedArea('default', this.props.latitude, this.props.longitude);
             a.Hydrate();
             this.setState({
                 area: a,

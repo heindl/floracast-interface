@@ -3,7 +3,7 @@
 import formatcoords from 'formatcoords';
 import * as geolib from 'geolib';
 import { computed } from 'mobx';
-import {S2CellId, S2LatLng, S2RegionCoverer, Utils} from 'nodes2ts';
+import {S2LatLng, S2RegionCoverer, Utils} from 'nodes2ts';
 import {getGlobalModel} from "../globals";
 import MLocationUserCoordinates from "./coordinate";
 import MLocationMapCoordinates from "./map";
@@ -112,7 +112,7 @@ class MLocationComputations {
     // }
 
     @computed
-    public get Covering(): S2CellId[] {
+    public get Covering(): string[] {
 
         const lat = this.mCoords.Latitude;
         const lng = this.mCoords.Longitude;
@@ -127,7 +127,7 @@ class MLocationComputations {
             radius
         );
 
-        const coverer = new S2RegionCoverer().setMaxCells(15);
+        const coverer = new S2RegionCoverer().setMaxCells(20).setMaxLevel(9);
 
         // console.log(JSON.stringify(
         //   {
@@ -141,7 +141,7 @@ class MLocationComputations {
         // ))
         // return cellIds;
 
-        return coverer.getCoveringCells(region);
+        return coverer.getCoveringCells(region).map((c) => c.toToken());
     }
     // public DistanceKilometers(latitude: number, longitude: number): number {
     //   return computed((): number => {

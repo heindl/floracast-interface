@@ -20,7 +20,7 @@ class TaxaCardList extends React.Component {
     public render() {
         const taxa = getGlobalModel('default', MUserTaxa).Taxa;
 
-        if (taxa.length > 0) {
+        if (taxa.length === 0) {
             return null
         }
         return (

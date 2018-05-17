@@ -40,7 +40,7 @@ export default class Card extends React.Component<ICardProps> {
 
         <div className="forecast-card-taxon">
           <h3 className="forecast-card-taxon-common-name">
-            <a onClick={this.navigateToMap}>{taxon.CommonName}</a>
+            <a onClick={this.navigateToMapTaxon}>{taxon.CommonName}</a>
           </h3>
           <h4 className="forecast-card-taxon-scientific-name">{taxon.ScientificName}</h4>
         </div>
@@ -49,7 +49,7 @@ export default class Card extends React.Component<ICardProps> {
               <div className="forecast-card-protected-area">
 
                     <h4 className="narrow forecast-card-protected-area-name">
-                        <a onClick={this.navigateToMap}>
+                        <a onClick={this.navigateToMapProtectedArea}>
                             {taxon.ProtectedArea.Name}
                         </a>
                     </h4>
@@ -60,7 +60,7 @@ export default class Card extends React.Component<ICardProps> {
                     }
 
                     <h5 className="forecast-card-protected-area-distance">
-                        {Math.round(taxon.ProtectedArea.DistanceKilometers * 0.621371)} miles {this.bearingToProtectedArea()}
+                        {Math.round(taxon.ProtectedArea.DistanceKilometers * 0.621371)} miles {this.bearingToProtectedArea}
                     </h5>
                   <ConfidenceScale prediction={taxon.Prediction} style={{
                      zIndex: 0,
@@ -76,14 +76,33 @@ export default class Card extends React.Component<ICardProps> {
     );
   }
 
-    protected navigateToMap = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    protected navigateToMapProtectedArea = (e: React.MouseEvent<HTMLAnchorElement>) => {
         e.preventDefault();
         const coords = getGlobalModel('default', MLocationUserCoordinates);
         const viewStore = getGlobalModel('default', MView);
         const taxaStore = getGlobalModel('default', MUserTaxa);
+
         viewStore.SetProtectedAreaToken(
-            this.props.taxon.ProtectedArea.TokenID || ''
+            this.props.taxon.ProtectedArea.IndexKey()
         );
+        taxaStore.Select(this.props.taxon.NameUsageID);
+        getGlobalModel('default', MRouter).NavigateTo({
+            params: {
+                date: getGlobalModel('default', MTime).DateString,
+                lat: coords.Latitude,
+                lng: coords.Longitude,
+                nameUsageId: this.props.taxon.NameUsageID,
+            },
+            section: 'map',
+        });
+    };
+
+    protected navigateToMapTaxon = (e: React.MouseEvent<HTMLAnchorElement>) => {
+        e.preventDefault();
+        const coords = getGlobalModel('default', MLocationUserCoordinates);
+        const viewStore = getGlobalModel('default', MView);
+        const taxaStore = getGlobalModel('default', MUserTaxa);
+
         viewStore.ShowTaxonCard();
         taxaStore.Select(this.props.taxon.NameUsageID);
         getGlobalModel('default', MRouter).NavigateTo({
@@ -98,7 +117,7 @@ export default class Card extends React.Component<ICardProps> {
     };
 
     @computed
-    protected bearingToProtectedArea = () => {
+    protected get bearingToProtectedArea() {
         const coordComps = getGlobalModel('default', MLocationUserComputations);
         const bearingFunc = coordComps.BearingToFunc;
         return bearingFunc(

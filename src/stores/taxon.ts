@@ -25,13 +25,13 @@ export default class Taxon {
     protected readonly namespace: string;
     protected errorStore: MErrors;
 
-    constructor(nameUsageId: string, namespace: string, protectedAreaToken?: string) {
+    constructor(nameUsageId: string, namespace: string, lat?: number, lng?: number) {
         this.namespace = namespace;
         this.NameUsageID = nameUsageId;
         this.errorStore = getGlobalModel(namespace, MErrors);
 
-        if (protectedAreaToken) {
-            this.ProtectedArea = new ProtectedArea(protectedAreaToken, namespace)
+        if (lat && lng) {
+            this.ProtectedArea = new ProtectedArea(namespace, lat, lng);
         }
 
         const fireStoreRef = getFireStoreRef(namespace);
@@ -69,7 +69,7 @@ export default class Taxon {
   protected setFirestoreData(snap: DocumentSnapshot) {
     this.CommonName = snap.get('CommonName');
     this.ScientificName = snap.get('ScientificName');
-    this.PhotoURL = snap.get('IPhoto.Large');
+    this.PhotoURL = snap.get('Photo.Large');
     this.Description = snap.get("Description")
     // if (photoUrl) {
     //   this.PhotoURL = `url(${photoUrl})`;

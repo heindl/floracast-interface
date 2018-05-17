@@ -1,10 +1,7 @@
 /* tslint:disable:max-classes-per-file */
 
-import * as _ from 'lodash';
 import {action, IReactionDisposer, observable, reaction} from 'mobx';
-import {S2CellId} from "nodes2ts";
 import {
-    FetchOccurrenceTaxa,
     FetchPredictionTaxa, IPredictionResponse,
 } from '../geoindex/taxa';
 import {MTime} from "./date";
@@ -23,7 +20,7 @@ interface ITaxaFetchData{
     lng: number;
     pointType: PointType;
     date: string;
-    covering: S2CellId[];
+    covering: string[];
     inFocusField?: InFocusField;
     section?: string;
 }
@@ -89,23 +86,25 @@ class TaxaStore {
   @action
   protected setPredictionTaxa(res: IPredictionResponse[]) {
 
+      console.log("Have Predictions", res)
+
       if (res.length === 0) {
           this.Taxa.clear();
           this.SetLoading(false);
           return
       }
 
-    this.Taxa.replace(
-      res.map((r, i) => {
-        const txn =
-          this.Taxa.find((t) => t.NameUsageID === r.nameUsageId) ||
-          new Taxon(r.nameUsageId, this.namespace, r.areaToken);
-        txn.ProtectedArea.SetDistanceKilometers(r.distance);
-        txn.ProtectedArea.SetSquareKilometersArea(r.sqKm);
-        txn.SetPrediction(r.prediction);
-        return txn;
-      })
-    );
+      const tlist = res.map((r, i) => {
+          const txn =
+              this.Taxa.find((t) => t.NameUsageID === r.nameUsageId) ||
+              new Taxon(r.nameUsageId, this.namespace, r.lat, r.lng);
+          txn.ProtectedArea.SetDistanceKilometers(r.distance);
+          txn.ProtectedArea.SetSquareKilometersArea(r.sqKm);
+          txn.SetPrediction(r.prediction);
+          return txn;
+      });
+
+    this.Taxa.replace(tlist);
 
     if (!this.Selected && res.length !== 0) {
       this.Select(this.Taxa[0]);
@@ -138,11 +137,13 @@ class TaxaStore {
 
   protected fetchTaxa(i: ITaxaFetchData){
 
-      const go = !_.isEmpty(i.lat)
-          && !_.isEmpty(i.lng)
-          && !_.isEmpty(i.pointType)
-          && !_.isEmpty(i.date)
-          && !_.isEmpty(i.covering);
+        console.log("taxa fetch request", i)
+
+      const go = i.lat !== 0
+          && i.lng !== 0
+          && i.pointType === PointType.Predictions
+          && i.date !== ''
+          && i.covering.length > 0;
 
       if (!go) {
           if (i.pointType) {
@@ -164,8 +165,13 @@ class TaxaStore {
       this.SetLoading(true);
 
       if (i.pointType === PointType.Predictions) {
-        FetchPredictionTaxa(getFireStoreRef(this.namespace), i.covering, [i.lat, i.lng], i.date)
-          .then((res: IPredictionResponse[]) => {
+        FetchPredictionTaxa(
+            getFireStoreRef(this.namespace),
+            i.covering,
+            [i.lat, i.lng],
+            i.date,
+        ).then((res: IPredictionResponse[]) => {
+              console.log("resolved", res)
             this.setPredictionTaxa(res);
           })
           .catch((err) => {
@@ -174,16 +180,16 @@ class TaxaStore {
           });
       }
 
-      if (i.pointType === PointType.Occurrences) {
-        FetchOccurrenceTaxa(getFireStoreRef(this.namespace), i.covering, i.date)
-          .then((res: Array<[string, number]>) => {
-            this.setOccurrenceTaxa(res);
-          })
-          .catch((err) => {
-              getGlobalModel(this.namespace, MErrors).Report(err);
-            this.SetLoading(false);
-          });
-      }
+      // if (i.pointType === PointType.Occurrences) {
+      //   FetchOccurrenceTaxa(getFireStoreRef(this.namespace), i.covering, i.date)
+      //     .then((res: Array<[string, number]>) => {
+      //       this.setOccurrenceTaxa(res);
+      //     })
+      //     .catch((err) => {
+      //         getGlobalModel(this.namespace, MErrors).Report(err);
+      //       this.SetLoading(false);
+      //     });
+      // }
   };
 
     protected dispose() {
