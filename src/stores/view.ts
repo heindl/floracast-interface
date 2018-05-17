@@ -15,6 +15,9 @@ export enum InFocusField {
 }
 
 export class MView {
+    static get global(): string {
+        return "MView";
+    }
 
     @observable public TaxonCardVisible: boolean = false;
     @observable public PointType: PointType = PointType.Predictions;

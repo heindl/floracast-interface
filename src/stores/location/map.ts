@@ -13,6 +13,10 @@ export const TileSize = 256;
 
 export default class MLocationMapCoordinates extends MLocationUserCoordinates {
 
+    static get global(): string {
+        return "MLocationMapCoordinates";
+    }
+
     @observable
     public Zoom: number = ZoomDefault;
 

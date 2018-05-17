@@ -7,21 +7,23 @@ interface INamespace{
 }
 
 interface IClassConstructable<T> {
-    name: string;
+    global: string;
     new(namespace: string): T;
+
 }
 
 export function getGlobalModel<T>(namespace: string, c: IClassConstructable<T>): T {
+
     if (namespace.trim() === '') {
         throw Error(`Invalid Namespace provided to get global namespace`);
     }
     if (!(namespaces.hasOwnProperty(namespace))) {
         namespaces[namespace] = {}
     }
-    if (!(namespaces[namespace].hasOwnProperty(c.name))) {
-        namespaces[namespace][c.name] = new c(namespace)
+    if (!(namespaces[namespace].hasOwnProperty(c.global))) {
+        namespaces[namespace][c.global] = new c(namespace)
     }
-    return namespaces[namespace][c.name];
+    return namespaces[namespace][c.global];
 }
 
 export function clearGlobalStores() {

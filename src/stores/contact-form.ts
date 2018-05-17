@@ -13,6 +13,9 @@ export enum ContactFormStateCode {
 }
 
 export class MContactForm {
+    static get global(): string {
+        return "MContactForm";
+    }
 
   @observable public SavedEmails: string[] = [];
   @observable

@@ -33,6 +33,9 @@ const WeekdaysPredictionsGenerated: { [key: number]: string } = {
 // ];
 
 export class MTime {
+    static get global(): string {
+        return "MTime";
+    }
 
     public readonly PredictionDateRange: [moment.Moment, moment.Moment];
 

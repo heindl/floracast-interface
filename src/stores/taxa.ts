@@ -1,9 +1,10 @@
 /* tslint:disable:max-classes-per-file */
 
+import {DocumentSnapshot, FirebaseFirestore} from "@firebase/firestore-types";
+import * as geolib from 'geolib';
+import * as _ from 'lodash';
 import {action, IReactionDisposer, observable, reaction} from 'mobx';
-import {
-    FetchPredictionTaxa, IPredictionResponse,
-} from '../geoindex/taxa';
+import {S2CellId} from "nodes2ts";
 import {MTime} from "./date";
 import MErrors from "./errors";
 import {getFireStoreRef} from './firestore';
@@ -13,6 +14,7 @@ import MLocationUserCoordinates from "./location/coordinate";
 import MLocationMapCoordinates from "./location/map";
 import Taxon from './taxon';
 import {InFocusField, MView, PointType} from './view';
+
 
 
 interface ITaxaFetchData{
@@ -25,7 +27,10 @@ interface ITaxaFetchData{
     section?: string;
 }
 
-class TaxaStore {
+class MTaxa {
+    static get global(): string {
+        return "MTaxa";
+    }
 
     @observable public Selected?: Taxon;
 
@@ -86,8 +91,6 @@ class TaxaStore {
   @action
   protected setPredictionTaxa(res: IPredictionResponse[]) {
 
-      console.log("Have Predictions", res)
-
       if (res.length === 0) {
           this.Taxa.clear();
           this.SetLoading(false);
@@ -137,8 +140,6 @@ class TaxaStore {
 
   protected fetchTaxa(i: ITaxaFetchData){
 
-        console.log("taxa fetch request", i)
-
       const go = i.lat !== 0
           && i.lng !== 0
           && i.pointType === PointType.Predictions
@@ -171,7 +172,6 @@ class TaxaStore {
             [i.lat, i.lng],
             i.date,
         ).then((res: IPredictionResponse[]) => {
-              console.log("resolved", res)
             this.setPredictionTaxa(res);
           })
           .catch((err) => {
@@ -198,14 +198,142 @@ class TaxaStore {
 }
 
 
-export class MUserTaxa extends TaxaStore {
+export class MUserTaxa extends MTaxa {
+    static get global(): string {
+        return "MUserTaxa";
+    }
+
     constructor(namespace: string) {
         super(namespace, MLocationUserCoordinates, MLocationUserComputations)
     }
 }
 
-export class MMapTaxa extends TaxaStore {
+export class MMapTaxa extends MTaxa {
+    static get global(): string {
+        return "MMapTaxa";
+    }
+
     constructor(namespace: string) {
         super(namespace, MLocationMapCoordinates, MLocationMapComputations)
     }
+}
+
+
+export function FetchOccurrenceTaxa(
+    fireStoreRef: FirebaseFirestore,
+    cellIds: S2CellId[],
+    month: string
+) {
+    return new Promise<Array<[string, number]>>((resResolve, resReject) => {
+        const aggr: { [key: string]: number } = {};
+        Promise.all(
+            cellIds.map((cellId) => {
+                return new Promise((resolve, reject) => {
+                    return fireStoreRef
+                        .collection('Occurrences')
+                        .where(
+                            `GeoFeatureSet.S2Tokens.${cellId.level()}`,
+                            '==',
+                            cellId.toToken()
+                        )
+                        .where('FormattedMonth', '==', month)
+                        .get()
+                        .then((snapshots) => {
+                            snapshots.forEach((doc) => {
+                                aggr[doc.get('NameUsageID')] =
+                                    (aggr[doc.get('NameUsageID')] += 1) || 1;
+                            });
+                            resolve();
+                        })
+                        .catch(reject);
+                });
+            })
+        )
+            .then(() => {
+                resResolve(_.sortBy(_.toPairs(aggr), (p) => p[1]));
+            })
+            .catch(resReject);
+    });
+}
+
+export interface IPredictionResponse {
+    nameUsageId: string;
+    sortValue: number;
+    prediction: number;
+    distance: number;
+    lat: number;
+    lng: number;
+    sqKm: number;
+}
+
+interface IFirestorePredictionResponse {
+    [key: string]: ITaxaArrayDoc[]
+}
+
+interface ITaxaArrayDoc {
+    Ω: number,
+    lat: number,
+    lng: number,
+    km: number,
+}
+
+export function FetchPredictionTaxa(
+    fireStoreRef: FirebaseFirestore,
+    s2Tokens: string[],
+    centre: [number, number], // Latitude, Longitude
+    date: string
+) {
+    return new Promise<IPredictionResponse[]>((resResolve, resReject) => {
+        // const areaCache = new AreaCache(centre);
+        Promise.all(s2Tokens.map((token) => {
+                return new Promise((resolve, reject) => {
+                    fireStoreRef
+                        .collection('PredictionIndex')
+                        .where(`Token`, '==', token)
+                        .where(`Date`, '==', date)
+                        .get()
+                        .then((snapshots) => {
+                            const res: IPredictionResponse[] = [];
+                            snapshots.docs.forEach((snap: DocumentSnapshot) => {
+
+                                const taxa: IFirestorePredictionResponse = snap.get("Taxa");
+
+                                _.each(taxa, (docs: ITaxaArrayDoc[], nameUsageId: string) => {
+                                    docs.forEach((doc: ITaxaArrayDoc) => {
+                                        const distance = geolib.getDistance(
+                                            {latitude: doc.lat, longitude: doc.lng},
+                                            {latitude: centre[0], longitude: centre[1]}
+                                        );
+                                        res.push({
+                                            distance,
+                                            lat: doc.lat,
+                                            lng: doc.lng,
+                                            nameUsageId,
+                                            prediction: doc.Ω,
+                                            sortValue: doc.Ω * 50 + doc.km * 0.01 - distance * 0.5,
+                                            sqKm: doc.km
+                                        })
+                                    })
+                                });
+                            });
+                            resolve(res);
+                        })
+                        .catch(reject);
+                });
+            })
+        ).then((list: IPredictionResponse[][]) => {
+
+            resResolve(
+                _.uniqBy(
+                    _.orderBy(
+                        _.flatten(_.compact(list)),
+                        ['sortValue', 'nameUsageId'],
+                        ['desc', 'asc']
+                    ),
+                    (r) => r.nameUsageId,
+                )
+            );
+        })
+            .catch(resReject);
+    });
 }

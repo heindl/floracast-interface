@@ -42,6 +42,10 @@ function symbolFromBearing(b: number): string {
 
 class MLocationComputations {
 
+    static get global(): string {
+        return "MLocationComputations";
+    }
+
     protected readonly mCoords: MLocationUserCoordinates;
 
     constructor(namespace: string, mCoords: typeof MLocationUserCoordinates | typeof MLocationMapCoordinates) {
@@ -179,12 +183,18 @@ class MLocationComputations {
 }
 
 export class MLocationMapComputations extends MLocationComputations {
+    static get global(): string {
+        return "MLocationMapComputations";
+    }
     constructor(namespace: string) {
         super(namespace, MLocationMapCoordinates)
     }
 }
 
 export class MLocationUserComputations extends MLocationComputations {
+    static get global(): string {
+        return "MLocationUserComputations";
+    }
     constructor(namespace: string) {
         super(namespace, MLocationUserCoordinates)
     }

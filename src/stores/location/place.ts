@@ -8,6 +8,10 @@ import GeocoderResult = google.maps.GeocoderResult;
 
 export default class MLocationPlace {
 
+    static get global(): string {
+        return "MLocationPlace";
+    }
+
     @observable
     public Locality: string;
 

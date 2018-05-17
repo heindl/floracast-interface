@@ -18,6 +18,9 @@ interface IPath {
 }
 
 export class MRouter {
+    static get global(): string {
+        return "MRouter";
+    }
 
     public readonly HistoryRef: history.History;
 

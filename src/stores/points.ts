@@ -25,6 +25,9 @@ export interface IMapPoint{
 }
 
 export class MMapPoints {
+    static get global(): string {
+        return "MMapPoints";
+    }
 
     @observable
     public IsLoading: boolean = false;
@@ -208,12 +211,18 @@ export class MMapPoints {
 }
 
 export class MMapOccurrences extends MMapPoints {
+    static get global(): string {
+        return "MMapOccurrences";
+    }
     constructor(namespace: string) {
         super(namespace, PointType.Occurrences)
     }
 }
 
 export class MMapPredictions extends MMapPoints {
+    static get global(): string {
+        return "MMapPredictions";
+    }
     constructor(namespace: string) {
         super(namespace, PointType.Predictions)
     }

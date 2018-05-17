@@ -8,6 +8,10 @@ export const DefaultRadius: number = 160;
 
 export default class MLocationUserCoordinates {
 
+    static get global(): string {
+        return "MLocationUserCoordinates";
+    }
+
     @observable
     public Latitude: number = 0;
 

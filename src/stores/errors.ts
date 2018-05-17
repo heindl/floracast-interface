@@ -5,6 +5,10 @@ import {ParseError} from "papaparse";
 // import { warn } from 'winston';
 
 export default class MErrors {
+  static get global(): string {
+    return "MErrors";
+  }
+
   @observable public ErrorMessage: string = '';
   protected readonly namespace: string;
   // protected errorReporter: ErrorReporting;

@@ -38,6 +38,9 @@ interface IReactionData{
 }
 
 export class MMapTimeline {
+    static get global(): string {
+        return "MMapTimeline";
+    }
 
     @observable
     public TickMarks = observable.array<ITickMark>([], {deep: false});
@@ -212,12 +215,19 @@ function minMaxScale(v: number, globalMax: number, globalMin: number): number {
 }
 
 export class MMapPredictionTimeline extends MMapTimeline {
+    static get global(): string {
+        return "MMapPredictionTimeline";
+    }
+
     constructor(namespace: string) {
         super(namespace, PointType.Predictions)
     }
 }
 
 export class MMapOccurrenceTimeline extends MMapTimeline {
+    static get global(): string {
+        return "MMapOccurrenceTimeline";
+    }
     constructor(namespace: string) {
         super(namespace, PointType.Occurrences)
     }
