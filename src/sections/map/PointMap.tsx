@@ -8,6 +8,7 @@ import Icon from '../../iconography/Icon';
 import {Minus, Navigate, Plus} from '../../iconography/Icons';
 import {MTime} from "../../stores/date";
 import {getGlobalModel} from "../../stores/globals";
+import MLocationUserCoordinates from "../../stores/location/coordinate";
 import MLocationMapCoordinates, {TileSize} from "../../stores/location/map";
 import {MMapOccurrences, MMapPredictions} from '../../stores/points';
 import {MView, PointType} from "../../stores/view";
@@ -185,7 +186,13 @@ export default class PointMap extends React.Component<
   }
 
     protected geolocate = () => {
-        getGlobalModel('default', MLocationMapCoordinates).Geolocate()
+        const uCoords = getGlobalModel('default', MLocationUserCoordinates);
+
+        const mCoords = getGlobalModel('default', MLocationMapCoordinates);
+        mCoords.SetCoordinates(
+            uCoords.Latitude,
+            uCoords.Longitude
+        );
     };
 
   protected zoomIn = () => {

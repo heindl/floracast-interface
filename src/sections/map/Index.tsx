@@ -4,6 +4,7 @@ import { RouteComponentProps, withRouter } from 'react-router';
 import {MTime} from "../../stores/date";
 import MErrors from "../../stores/errors";
 import {getGlobalModel} from "../../stores/globals";
+import MLocationUserCoordinates from "../../stores/location/coordinate";
 import MLocationMapCoordinates from "../../stores/location/map";
 import {parseCoordinates} from "../../stores/router";
 import {MMapTaxa} from "../../stores/taxa";
@@ -54,6 +55,11 @@ class Index extends React.Component<Props> {
 
   public componentDidMount() {
       getGlobalModel('default', MView).SetSection('map');
+      // Set user coords in order to calc distance from protected area.
+      const sCoords = getGlobalModel('default', MLocationUserCoordinates);
+      if (!sCoords.Latitude || sCoords.Longitude || sCoords.Latitude === 0 ||  sCoords.Longitude === 0 ) {
+            sCoords.Geolocate();
+      }
   }
 
   public componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {

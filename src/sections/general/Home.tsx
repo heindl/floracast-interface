@@ -21,12 +21,15 @@ export default class Home extends React.Component {
           <div>
           <Masthead />
         <div id="home-container">
-            <div className="home-section-row" style={{display: "flex"}}>
+            <div className="home-section-row" style={{
+                display: "flex",
+                justifyContent: "space-between"
+            }}>
                 <div style={{
                     display: "flex",
-                    flex: 1,
                     flexDirection: "column",
                     justifyContent: "center",
+                    width: "45%",
                 }}>
                     <h3>1. Life is a Mystery</h3>
                       <h4 className="paragraph">
@@ -37,7 +40,10 @@ export default class Home extends React.Component {
                     <h4 className="paragraph">Even the experts struggle because climate change is disrupting the experience of generations.</h4>
                 </div>
 
-                <div style={{flex: 1}}>
+                <div style={{
+                    border: "5px solid #000",
+                    width: "45%",
+                }}>
 
                     <RandomGeoClusters
                         width={"100%"}
@@ -54,7 +60,7 @@ export default class Home extends React.Component {
                 alignItems: "flex-end",
                 display: "flex",
                 flexDirection: "column",
-                position: "relative",
+                position: "relative"
             }}>
 
                 <Wreath style={{
@@ -63,14 +69,14 @@ export default class Home extends React.Component {
                     padding: 0,
                     position: "absolute",
                     top: 0,
-                }} width="70%" height="100%" radius={40} viewBox={[800,600]}/>
+                }} width="60%" height="100%" radius={40} viewBox={[800,600]}/>
                 <div style={{
                     alignContent: "center",
                     display: "flex",
                     flexDirection: "column",
                     height: "100%",
                     justifyContent: "center",
-                    width: "50%",
+                    width: "45%",
                 }}>
                     <h3>2. Enter Machine Learning</h3>
                     <h4 className="paragraph">

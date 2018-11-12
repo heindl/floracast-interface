@@ -180,6 +180,10 @@ small, .small {
   font-family: var(--font-header);
 }
 
+.heavy {
+  font-weight: 900;
+}
+
 a {
   text-decoration: none;
 }

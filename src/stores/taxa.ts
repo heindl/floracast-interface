@@ -12,10 +12,9 @@ import {getGlobalModel} from "./globals";
 import {MLocationMapComputations, MLocationUserComputations} from "./location/computation";
 import MLocationUserCoordinates from "./location/coordinate";
 import MLocationMapCoordinates from "./location/map";
+import {MRouter} from "./router";
 import Taxon from './taxon';
 import {InFocusField, MView, PointType} from './view';
-
-
 
 interface ITaxaFetchData{
     lat: number;
@@ -81,6 +80,7 @@ class MTaxa {
         }
         this.Selected =
             typeof txn === 'string' ? new Taxon(txn, this.namespace) : txn;
+        getGlobalModel('default', MRouter).UpdateCurrentPath({nameUsageId: this.Selected.NameUsageID})
     }
 
   @action

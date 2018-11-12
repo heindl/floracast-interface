@@ -81,6 +81,7 @@ export default class MLocationMapCoordinates extends MLocationUserCoordinates {
         this.Zoom = zoom;
         this.Latitude = lat;
         this.Longitude = lng;
+        getGlobalModel(this.namespace, MRouter).UpdateCurrentPath({lat, lng, zoom})
     }
 
 

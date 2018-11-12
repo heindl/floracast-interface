@@ -51,7 +51,7 @@ export default class MLocationUserCoordinates {
     }
 
     @action
-    public SetCoordinates(lat: number, lng: number){
+    public SetCoordinates(lat: number, lng: number, updateBrowserPath?: boolean){
 
         lat = parseFloat(lat.toPrecision(8));
         lng = parseFloat(lng.toPrecision(8));
@@ -61,7 +61,9 @@ export default class MLocationUserCoordinates {
         }
         this.Latitude = lat;
         this.Longitude = lng;
-        getGlobalModel(this.namespace, MRouter).UpdateCurrentPath({lat, lng})
+        if (updateBrowserPath) {
+            getGlobalModel(this.namespace, MRouter).UpdateCurrentPath({lat, lng})
+        }
     }
 
     @action
